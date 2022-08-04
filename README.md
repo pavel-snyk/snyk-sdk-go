@@ -1,0 +1,1 @@
+# Snyk SDK for Go
