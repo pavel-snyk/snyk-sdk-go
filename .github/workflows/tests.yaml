@@ -27,7 +27,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: .bin
-          key: ${{  runner.os }}-linter-binaries
+          key: ${{  runner.os }}-linter-binaries-${{ hashFiles(Makefile) }}
 
       - name: Lint
         run: make tools lint
