@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	defaultBaseURL   = "https://dev.snyk.io/api/"
+	defaultBaseURL   = "https://snyk.io/api/"
 	defaultMediaType = "application/json"
 	defaultUserAgent = "snyk-sdk-go (pavel-snyk)/dev"
 
