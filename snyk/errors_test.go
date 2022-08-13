@@ -1,10 +1,11 @@
 package snyk
 
 import (
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/url"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestErrorResponse_Error_withoutSnykRequestID(t *testing.T) {

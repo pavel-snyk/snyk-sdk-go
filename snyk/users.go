@@ -13,13 +13,17 @@ type UsersService service
 
 // User represents a Snyk user.
 type User struct {
-	Email    string `json:"email,omitempty"`
-	ID       string `json:"id,omitempty"`
-	Name     string `json:"name,omitempty"`
-	Username string `json:"username,omitempty"`
+	Email         string         `json:"email,omitempty"`
+	ID            string         `json:"id,omitempty"`
+	Name          string         `json:"name,omitempty"`
+	Username      string         `json:"username,omitempty"`
+	Organizations []Organization `json:"orgs,omitempty"`
 }
 
 // GetCurrent retrieves information about the user making the request.
+//
+// Note: the retrieved user will include information about organizations
+// that the user belongs to.
 func (s *UsersService) GetCurrent(ctx context.Context) (*User, *Response, error) {
 	path := fmt.Sprintf("%s/me", userBasePath)
 
