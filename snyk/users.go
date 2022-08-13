@@ -19,8 +19,8 @@ type User struct {
 	Username string `json:"username,omitempty"`
 }
 
-// Get retrieves information about the user making the request.
-func (s *UsersService) Get(ctx context.Context) (*User, *Response, error) {
+// GetCurrent retrieves information about the user making the request.
+func (s *UsersService) GetCurrent(ctx context.Context) (*User, *Response, error) {
 	path := fmt.Sprintf("%s/me", userBasePath)
 
 	req, err := s.client.NewRequest(http.MethodGet, path, nil)
@@ -37,8 +37,8 @@ func (s *UsersService) Get(ctx context.Context) (*User, *Response, error) {
 	return user, resp, nil
 }
 
-// GetByID retrieves information about a user identified by id.
-func (s *UsersService) GetByID(ctx context.Context, userID string) (*User, *Response, error) {
+// Get retrieves information about a user identified by id.
+func (s *UsersService) Get(ctx context.Context, userID string) (*User, *Response, error) {
 	path := fmt.Sprintf("%s/%s", userBasePath, userID)
 
 	req, err := s.client.NewRequest(http.MethodGet, path, nil)
