@@ -39,6 +39,28 @@ type service struct {
 
 type ClientOption func(*Client)
 
+// WithBaseURL configures Client to use a specific API endpoint.
+func WithBaseURL(baseURL string) ClientOption {
+	return func(client *Client) {
+		parsedURL, _ := url.Parse(baseURL)
+		client.BaseURL = parsedURL
+	}
+}
+
+// WithHTTPClient configures Client to use a specific http client for communication.
+func WithHTTPClient(httpClient *http.Client) ClientOption {
+	return func(client *Client) {
+		client.httpClient = httpClient
+	}
+}
+
+// WithUserAgent configures Client to use a specific user agent.
+func WithUserAgent(userAgent string) ClientOption {
+	return func(client *Client) {
+		client.UserAgent = userAgent
+	}
+}
+
 // NewClient creates a new Snyk API client.
 func NewClient(token string, opts ...ClientOption) *Client {
 	baseURL, _ := url.Parse(defaultBaseURL)
