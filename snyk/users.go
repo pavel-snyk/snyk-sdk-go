@@ -8,7 +8,7 @@ import (
 
 const userBasePath = "user"
 
-// UsersService handles communication with the user related method of the Snyk API.
+// UsersService handles communication with the user related methods of the Snyk API.
 type UsersService service
 
 // User represents a Snyk user.

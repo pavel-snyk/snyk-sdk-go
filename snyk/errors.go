@@ -1,6 +1,16 @@
 package snyk
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
+
+var (
+	// ErrEmptyArgument indicates that mandatory argument is empty.
+	ErrEmptyArgument = errors.New("snyk-sdk-go: argument cannot be empty")
+	// ErrEmptyPayloadNotAllowed indicates that empty payload is not allowed.
+	ErrEmptyPayloadNotAllowed = errors.New("snyk-sdk-go: empty payload is not allowed")
+)
 
 // An ErrorResponse reports an error caused by an API request.
 type ErrorResponse struct {
