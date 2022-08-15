@@ -36,9 +36,9 @@ func TestClient_NewClient_defaults(t *testing.T) {
 	setup()
 	defer teardown()
 
-	assert.NotNil(t, client.BaseURL)
-	assert.Equal(t, fmt.Sprintf("%v/", server.URL), client.BaseURL.String())
-	assert.Equal(t, "auth-token", client.Token)
+	assert.NotNil(t, client.baseURL)
+	assert.Equal(t, fmt.Sprintf("%v/", server.URL), client.baseURL.String())
+	assert.Equal(t, "auth-token", client.token)
 }
 
 func TestClient_NewClient_withBaseURL(t *testing.T) {
@@ -47,7 +47,7 @@ func TestClient_NewClient_withBaseURL(t *testing.T) {
 		WithBaseURL("https://testing.snyk.io/api"),
 	)
 
-	assert.Equal(t, expectedBaseURL, client.BaseURL)
+	assert.Equal(t, expectedBaseURL, client.baseURL)
 }
 
 func TestClient_NewClient_withHTTPClient(t *testing.T) {
@@ -64,5 +64,5 @@ func TestClient_NewClient_withUserAgent(t *testing.T) {
 		WithUserAgent("test-user-agent"),
 	)
 
-	assert.Equal(t, "test-user-agent", client.UserAgent)
+	assert.Equal(t, "test-user-agent", client.userAgent)
 }

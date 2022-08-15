@@ -25,11 +25,11 @@ const (
 type Client struct {
 	httpClient *http.Client
 
-	BaseURL   *url.URL // Base URL for API requests.
-	UserAgent string
-	Token     string
+	baseURL   *url.URL // base URL for API requests.
+	userAgent string
+	token     string
 
-	common service // Reuse a single struct instead of allocating one for each service on the heap.
+	common service // reuse a single struct instead of allocating one for each service on the heap.
 
 	Users *UsersService
 }
@@ -44,7 +44,7 @@ type ClientOption func(*Client)
 func WithBaseURL(baseURL string) ClientOption {
 	return func(client *Client) {
 		parsedURL, _ := url.Parse(baseURL)
-		client.BaseURL = parsedURL
+		client.baseURL = parsedURL
 	}
 }
 
@@ -58,7 +58,7 @@ func WithHTTPClient(httpClient *http.Client) ClientOption {
 // WithUserAgent configures Client to use a specific user agent.
 func WithUserAgent(userAgent string) ClientOption {
 	return func(client *Client) {
-		client.UserAgent = userAgent
+		client.userAgent = userAgent
 	}
 }
 
@@ -72,9 +72,9 @@ func NewClient(token string, opts ...ClientOption) *Client {
 	c := &Client{
 		httpClient: httpClient,
 
-		BaseURL:   baseURL,
-		UserAgent: defaultUserAgent,
-		Token:     token,
+		baseURL:   baseURL,
+		userAgent: defaultUserAgent,
+		token:     token,
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -89,10 +89,10 @@ func NewClient(token string, opts ...ClientOption) *Client {
 
 // NewRequest creates an API request.
 func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Request, error) {
-	if !strings.HasSuffix(c.BaseURL.Path, "/") {
-		return nil, fmt.Errorf("BaseURL must have a trailing slash, but %q does not", c.BaseURL)
+	if !strings.HasSuffix(c.baseURL.Path, "/") {
+		return nil, fmt.Errorf("baseURL must have a trailing slash, but %q does not", c.baseURL)
 	}
-	u, err := c.BaseURL.Parse(urlStr)
+	u, err := c.baseURL.Parse(urlStr)
 	if err != nil {
 		return nil, err
 	}
@@ -110,11 +110,11 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 		return nil, err
 	}
 	if req.Header.Get("Authorization") == "" {
-		req.Header.Set("Authorization", fmt.Sprintf("token %s", c.Token))
+		req.Header.Set("Authorization", fmt.Sprintf("token %s", c.token))
 	}
 	req.Header.Set("Accept", defaultMediaType)
 	req.Header.Set("Content-Type", defaultMediaType)
-	req.Header.Set("User-Agent", c.UserAgent)
+	req.Header.Set("User-Agent", c.userAgent)
 
 	return req, nil
 }
