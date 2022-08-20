@@ -1,5 +1,9 @@
 # Snyk SDK for Go
 
+_Disclaimer: this SDK is currently in technical preview and not ready for
+production usage. This means some aspects of its design and implementation
+are not yet considered stable._
+
 snyk-sdk-go is the (un)official Snyk SDK for the Go programming language.
 
 ## Installation
