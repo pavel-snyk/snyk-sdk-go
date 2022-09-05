@@ -33,6 +33,7 @@ type Client struct {
 
 	Integrations *IntegrationsService
 	Orgs         *OrgsService
+	Projects     *ProjectsService
 	Users        *UsersService
 }
 
@@ -86,6 +87,7 @@ func NewClient(token string, opts ...ClientOption) *Client {
 
 	c.Integrations = (*IntegrationsService)(&c.common)
 	c.Orgs = (*OrgsService)(&c.common)
+	c.Projects = (*ProjectsService)(&c.common)
 	c.Users = (*UsersService)(&c.common)
 
 	return c
