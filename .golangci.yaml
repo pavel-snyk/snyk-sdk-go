@@ -1,7 +1,6 @@
 linters:
   disable-all: true
   enable:
-    - deadcode
     - errcheck
     - gofmt
     - goimports
@@ -11,7 +10,6 @@ linters:
     - staticcheck
     - unconvert
     - unused
-    - varcheck
     - vet
 
 linters-settings:
