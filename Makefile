@@ -9,11 +9,8 @@ BUILD_DIR := build
 ## tools: Install required tooling.
 .PHONY: tools
 tools:
-ifeq (,$(wildcard ./.bin/golangci-lint*))
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b .bin v1.48.0
-else
-	@echo "==> Required tooling is already installed"
-endif
+	@echo "==> Installing required tooling..."
+	@cd tools && go install github.com/golangci/golangci-lint/cmd/golangci-lint
 
 ## clean: Delete the build directory.
 .PHONY: clean
@@ -25,14 +22,14 @@ clean:
 .PHONY: lint
 lint:
 	@echo "==> Linting code with 'golangci-lint'..."
-	@.bin/golangci-lint run ./...
+	@golangci-lint run ./...
 
 ## test: Run all tests.
 .PHONY: test
 test:
 	@echo "==> Running tests..."
 	@mkdir -p $(BUILD_DIR)
-	@go test -count=1 -v -cover -coverprofile=$(BUILD_DIR)/coverage.out ./...
+	@go test -count=1 -v -cover -coverprofile=$(BUILD_DIR)/coverage.out -parallel=4 ./...
 
 
 help: Makefile
