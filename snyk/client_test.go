@@ -66,3 +66,6 @@ func TestClient_NewClient_withUserAgent(t *testing.T) {
 
 	assert.Equal(t, "test-user-agent", client.userAgent)
 }
+
+// boolPtr is a helper routine that allocates a new bool value to store v and returns a pointer to it.
+func boolPtr(v bool) *bool { return &v }

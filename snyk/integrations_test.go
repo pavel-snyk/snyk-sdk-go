@@ -198,3 +198,94 @@ func TestIntegrations_DeleteCredentials_emptyIntegrationID(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, ErrEmptyArgument, err)
 }
+
+func TestIntegrations_GetSettings(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/org/long-uuid/integrations/fef79ea8-3ad4-4598-ae11-d8730ede2382/settings", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		_, _ = fmt.Fprint(w, `
+{
+  "dockerfileSCMEnabled": false,
+  "pullRequestFailOnAnyVulns": false,
+  "pullRequestFailOnlyForIssuesWithFix": true,
+  "pullRequestFailOnlyForHighSeverity": false,
+  "pullRequestTestEnabled": true
+}
+`)
+	})
+	expectedSettings := &IntegrationSettings{
+		DockerfileDetectionEnabled:                    boolPtr(false),
+		PullRequestFailOnAnyVulnerability:             boolPtr(false),
+		PullRequestFailOnlyForIssuesWithFix:           boolPtr(true),
+		PullRequestFailOnlyForHighAndCriticalSeverity: boolPtr(false),
+		PullRequestTestEnabled:                        boolPtr(true),
+	}
+
+	actualSettings, _, err := client.Integrations.GetSettings(ctx, "long-uuid", "fef79ea8-3ad4-4598-ae11-d8730ede2382")
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedSettings, actualSettings)
+}
+
+func TestIntegrations_GetSettings_emptyOrganizationID(t *testing.T) {
+	_, _, err := client.Integrations.GetSettings(ctx, "", "integration-id")
+
+	assert.Error(t, err)
+	assert.Equal(t, ErrEmptyArgument, err)
+}
+
+func TestIntegrations_UpdateSettings(t *testing.T) {
+	setup()
+	defer teardown()
+
+	input := &IntegrationSettingsUpdateRequest{
+		IntegrationSettings: &IntegrationSettings{
+			DockerfileDetectionEnabled: boolPtr(false),
+			PullRequestTestEnabled:     boolPtr(true),
+		},
+	}
+	mux.HandleFunc("/org/long-uuid/integrations/fef79ea8-3ad4-4598-ae11-d8730ede2382/settings", func(w http.ResponseWriter, r *http.Request) {
+		v := new(IntegrationSettingsUpdateRequest)
+		_ = json.NewDecoder(r.Body).Decode(v)
+		assert.Equal(t, input, v)
+		assert.Equal(t, http.MethodPut, r.Method)
+		_, _ = fmt.Fprint(w, `
+{
+  "dockerfileSCMEnabled": false,
+  "pullRequestTestEnabled": true
+}
+`)
+	})
+	expectedSettings := &IntegrationSettings{
+		DockerfileDetectionEnabled: boolPtr(false),
+		PullRequestTestEnabled:     boolPtr(true),
+	}
+
+	actualSettings, _, err := client.Integrations.UpdateSettings(ctx, "long-uuid", "fef79ea8-3ad4-4598-ae11-d8730ede2382", input)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedSettings, actualSettings)
+}
+
+func TestIntegrations_UpdateSettings_emptyOrganizationID(t *testing.T) {
+	_, _, err := client.Integrations.UpdateSettings(ctx, "", "integration-id", &IntegrationSettingsUpdateRequest{})
+
+	assert.Error(t, err)
+	assert.Equal(t, ErrEmptyArgument, err)
+}
+
+func TestIntegrations_UpdateSettings_emptyIntegrationID(t *testing.T) {
+	_, _, err := client.Integrations.UpdateSettings(ctx, "long-uuid", "", &IntegrationSettingsUpdateRequest{})
+
+	assert.Error(t, err)
+	assert.Equal(t, ErrEmptyArgument, err)
+}
+
+func TestIntegrations_UpdateSettings_emptyPayload(t *testing.T) {
+	_, _, err := client.Integrations.UpdateSettings(ctx, "long-uuid", "integration-id", nil)
+
+	assert.Error(t, err)
+	assert.Equal(t, ErrEmptyPayloadNotAllowed, err)
+}
