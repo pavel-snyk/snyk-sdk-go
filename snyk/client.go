@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	libraryVersion   = "0.2.0"
+	libraryVersion   = "0.3.0"
 	defaultBaseURL   = "https://snyk.io/api/"
 	defaultMediaType = "application/json"
 	defaultUserAgent = "snyk-sdk-go/" + libraryVersion + " (+https://github.com/pavel-snyk/snyk-sdk-go)"
