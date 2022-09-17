@@ -46,7 +46,7 @@ type Integration struct {
 	Type        IntegrationType         `json:"type,omitempty"`
 }
 
-// IntegrationCredentials represents a credentials for the specific integration.
+// IntegrationCredentials represents a credentials object for the specific integration.
 type IntegrationCredentials struct {
 	Password     string `json:"password,omitempty"`
 	Region       string `json:"region,omitempty"`
@@ -65,6 +65,34 @@ type IntegrationCreateRequest struct {
 // IntegrationUpdateRequest represents a request to update an integration.
 type IntegrationUpdateRequest struct {
 	*Integration
+}
+
+// IntegrationSettings represents settings for the specific integration.
+type IntegrationSettings struct {
+	// DockerfileDetectionEnabled will automatically detect and scan Dockerfiles in your Git repositories.
+	DockerfileDetectionEnabled *bool `json:"dockerfileSCMEnabled,omitempty"`
+
+	// PullRequestFailOnAnyVulnerability fails an opened pull request if any vulnerable dependencies have been detected,
+	// otherwise the pull request should only fail when a dependency with issues is added.
+	PullRequestFailOnAnyVulnerability *bool `json:"pullRequestFailOnAnyVulns,omitempty"`
+
+	// PullRequestFailOnlyForIssuesWithFix fails an opened pull request only when issues found have a fix available.
+	PullRequestFailOnlyForIssuesWithFix *bool `json:"pullRequestFailOnlyForIssuesWithFix,omitempty"`
+
+	// PullRequestFailOnlyForHighAndCriticalSeverity fails an opened pull request if any dependencies are marked
+	// as being of high or critical severity.
+	PullRequestFailOnlyForHighAndCriticalSeverity *bool `json:"pullRequestFailOnlyForHighSeverity,omitempty"`
+
+	// PullRequestTestEnabled tests any newly created pull request in your repositories for security vulnerabilities
+	// and sends a status check to GitHub.
+	//
+	// Snyk docs: https://docs.snyk.io/integrations/git-repository-scm-integrations/github-integration#pull-request-testing
+	PullRequestTestEnabled *bool `json:"pullRequestTestEnabled,omitempty"`
+}
+
+// IntegrationSettingsUpdateRequest represents a request to update an integration settings.
+type IntegrationSettingsUpdateRequest struct {
+	*IntegrationSettings
 }
 
 // List provides a list of all integrations for the given organization.
@@ -139,7 +167,7 @@ func (s *IntegrationsService) Create(ctx context.Context, organizationID string,
 	return integration, resp, nil
 }
 
-// Update edits an integration identified by id.
+// Update edits an integration.
 func (s *IntegrationsService) Update(ctx context.Context, organizationID, integrationID string, updateRequest *IntegrationUpdateRequest) (*Integration, *Response, error) {
 	if organizationID == "" {
 		return nil, nil, ErrEmptyArgument
@@ -185,4 +213,57 @@ func (s *IntegrationsService) DeleteCredentials(ctx context.Context, organizatio
 	}
 
 	return s.client.Do(ctx, req, nil)
+}
+
+// GetSettings retrieves information about a settings for the given integration.
+func (s *IntegrationsService) GetSettings(ctx context.Context, organizationID, integrationID string) (*IntegrationSettings, *Response, error) {
+	if organizationID == "" {
+		return nil, nil, ErrEmptyArgument
+	}
+	if integrationID == "" {
+		return nil, nil, ErrEmptyArgument
+	}
+
+	path := fmt.Sprintf(integrationBasePath+"/%v/settings", organizationID, integrationID)
+
+	req, err := s.client.NewRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	settings := new(IntegrationSettings)
+	resp, err := s.client.Do(ctx, req, settings)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return settings, resp, nil
+}
+
+// UpdateSettings edits an integration settings.
+func (s *IntegrationsService) UpdateSettings(ctx context.Context, organizationID, integrationID string, updateRequest *IntegrationSettingsUpdateRequest) (*IntegrationSettings, *Response, error) {
+	if organizationID == "" {
+		return nil, nil, ErrEmptyArgument
+	}
+	if integrationID == "" {
+		return nil, nil, ErrEmptyArgument
+	}
+	if updateRequest == nil {
+		return nil, nil, ErrEmptyPayloadNotAllowed
+	}
+
+	path := fmt.Sprintf(integrationBasePath+"/%v/settings", organizationID, integrationID)
+
+	req, err := s.client.NewRequest(http.MethodPut, path, updateRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	settings := new(IntegrationSettings)
+	resp, err := s.client.Do(ctx, req, settings)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return settings, resp, nil
 }
