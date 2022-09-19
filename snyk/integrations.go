@@ -69,12 +69,25 @@ type IntegrationUpdateRequest struct {
 
 // IntegrationSettings represents settings for the specific integration.
 type IntegrationSettings struct {
+	// DependencyAutoUpgradeEnabled can automatically raise pull requests to update out-of-date dependencies.
+	DependencyAutoUpgradeEnabled *bool `json:"autoDepUpgradeEnabled,omitempty"`
+
+	// DependencyAutoUpgradeIgnoredDependencies list of dependencies should be ignored.
+	DependencyAutoUpgradeIgnoredDependencies []string `json:"autoDepUpgradeIgnoredDependencies,omitempty"`
+
+	// DependencyAutoUpgradePullRequestLimit how many automatic dependency upgrade PRs can be opened simultaneously.
+	DependencyAutoUpgradePullRequestLimit int `json:"autoDepUpgradeLimit,omitempty"`
+
+	// DependencyAutoUpgradeIncludeMajorVersion includes major version in upgrade recommendation, otherwise it will be
+	// minor and patch versions only.
+	DependencyAutoUpgradeIncludeMajorVersion *bool `json:"isMajorUpgradeEnabled,omitempty"`
+
 	// DockerfileDetectionEnabled will automatically detect and scan Dockerfiles in your Git repositories.
 	DockerfileDetectionEnabled *bool `json:"dockerfileSCMEnabled,omitempty"`
 
-	// PullRequestFailOnAnyVulnerability fails an opened pull request if any vulnerable dependencies have been detected,
+	// PullRequestFailOnAnyIssue fails an opened pull request if any vulnerable dependencies have been detected,
 	// otherwise the pull request should only fail when a dependency with issues is added.
-	PullRequestFailOnAnyVulnerability *bool `json:"pullRequestFailOnAnyVulns,omitempty"`
+	PullRequestFailOnAnyIssue *bool `json:"pullRequestFailOnAnyVulns,omitempty"`
 
 	// PullRequestFailOnlyForIssuesWithFix fails an opened pull request only when issues found have a fix available.
 	PullRequestFailOnlyForIssuesWithFix *bool `json:"pullRequestFailOnlyForIssuesWithFix,omitempty"`
