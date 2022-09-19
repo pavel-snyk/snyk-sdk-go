@@ -217,7 +217,7 @@ func TestIntegrations_GetSettings(t *testing.T) {
 	})
 	expectedSettings := &IntegrationSettings{
 		DockerfileDetectionEnabled:                    boolPtr(false),
-		PullRequestFailOnAnyVulnerability:             boolPtr(false),
+		PullRequestFailOnAnyIssue:                     boolPtr(false),
 		PullRequestFailOnlyForIssuesWithFix:           boolPtr(true),
 		PullRequestFailOnlyForHighAndCriticalSeverity: boolPtr(false),
 		PullRequestTestEnabled:                        boolPtr(true),
