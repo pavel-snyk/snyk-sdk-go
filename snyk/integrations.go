@@ -69,6 +69,19 @@ type IntegrationUpdateRequest struct {
 
 // IntegrationSettings represents settings for the specific integration.
 type IntegrationSettings struct {
+	// DependencyAutoUpgradeEnabled can automatically raise pull requests to update out-of-date dependencies.
+	DependencyAutoUpgradeEnabled *bool `json:"autoDepUpgradeEnabled,omitempty"`
+
+	// DependencyAutoUpgradeIgnoredDependencies list of dependencies should be ignored.
+	DependencyAutoUpgradeIgnoredDependencies []string `json:"autoDepUpgradeIgnoredDependencies,omitempty"`
+
+	// DependencyAutoUpgradePullRequestLimit how many automatic dependency upgrade PRs can be opened simultaneously.
+	DependencyAutoUpgradePullRequestLimit int `json:"autoDepUpgradeLimit,omitempty"`
+
+	// DependencyAutoUpgradeIncludeMajorVersion includes major version in upgrade recommendation, otherwise it will be
+	// minor and patch versions only.
+	DependencyAutoUpgradeIncludeMajorVersion *bool `json:"isMajorUpgradeEnabled,omitempty"`
+
 	// DockerfileDetectionEnabled will automatically detect and scan Dockerfiles in your Git repositories.
 	DockerfileDetectionEnabled *bool `json:"dockerfileSCMEnabled,omitempty"`
 
