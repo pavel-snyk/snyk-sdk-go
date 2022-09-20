@@ -76,7 +76,7 @@ type IntegrationSettings struct {
 	DependencyAutoUpgradeIgnoredDependencies []string `json:"autoDepUpgradeIgnoredDependencies,omitempty"`
 
 	// DependencyAutoUpgradePullRequestLimit how many automatic dependency upgrade PRs can be opened simultaneously.
-	DependencyAutoUpgradePullRequestLimit int `json:"autoDepUpgradeLimit,omitempty"`
+	DependencyAutoUpgradePullRequestLimit int64 `json:"autoDepUpgradeLimit,omitempty"`
 
 	// DependencyAutoUpgradeIncludeMajorVersion includes major version in upgrade recommendation, otherwise it will be
 	// minor and patch versions only.
