@@ -1,5 +1,10 @@
 # Snyk SDK for Go
 
+[![Build](https://img.shields.io/github/workflow/status/pavel-snyk/snyk-sdk-go/Build?label=unit+tests)](https://github.com/pavel-snyk/snyk-sdk-go/actions/workflows/tests.yaml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/pavel-snyk/snyk-sdk-go)](https://goreportcard.com/report/github.com/pavel-snyk/snyk-sdk-go)
+[![GoDoc](https://img.shields.io/badge/pkg.go.dev-doc-blue)](https://pkg.go.dev/github.com/pavel-snyk/snyk-sdk-go)
+[![Release](https://img.shields.io/github/v/tag/pavel-snyk/snyk-sdk-go?label=release)](https://github.com/pavel-snyk/snyk-sdk-go/releases)
+
 _Disclaimer: this SDK is currently in technical preview and not ready for
 production usage. This means some aspects of its design and implementation
 are not yet considered stable._
