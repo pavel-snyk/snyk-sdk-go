@@ -20,8 +20,7 @@ type Project struct {
 	Name   string `json:"name,omitempty"`
 	Origin string `json:"origin,omitempty"`
 
-	svc *ProjectsService
-	org *Organization
+	OrgId string `json:"-"`
 }
 
 type projectsRoot struct {
@@ -53,8 +52,7 @@ func (s *ProjectsService) List(ctx context.Context, organizationID string) ([]Pr
 	}
 
 	for k, v := range root.Projects {
-		v.svc = s
-		v.org = &root.Organization
+		v.OrgId = root.Organization.ID
 		root.Projects[k] = v
 	}
 
@@ -106,10 +104,10 @@ type ProjectRemediation struct {
 	Pin     struct{} `json:"pin"`
 }
 
-func (p *Project) AddTag(ctx context.Context, key string, value string) ([]Tag, *Response, error) {
-	path := fmt.Sprintf(projectTagsPath, p.org.ID, p.ID)
+func (s *ProjectsService) AddTag(ctx context.Context, p *Project, key string, value string) ([]Tag, *Response, error) {
+	path := fmt.Sprintf(projectTagsPath, p.OrgId, p.ID)
 
-	req, err := p.svc.client.NewRequest(http.MethodPost, path, projectAddTagRequest{
+	req, err := s.client.NewRequest(http.MethodPost, path, projectAddTagRequest{
 		Key:   key,
 		Value: value,
 	})
@@ -118,7 +116,7 @@ func (p *Project) AddTag(ctx context.Context, key string, value string) ([]Tag, 
 	}
 
 	root := new([]Tag)
-	resp, err := p.svc.client.Do(ctx, req, root)
+	resp, err := s.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -126,16 +124,16 @@ func (p *Project) AddTag(ctx context.Context, key string, value string) ([]Tag, 
 	return *root, resp, nil
 }
 
-func (p *Project) Details(ctx context.Context) (*ProjectDetails, *Response, error) {
-	path := fmt.Sprintf(projectPath, p.org.ID, p.ID)
+func (s *ProjectsService) Details(ctx context.Context, p *Project) (*ProjectDetails, *Response, error) {
+	path := fmt.Sprintf(projectPath, p.OrgId, p.ID)
 
-	req, err := p.svc.client.NewRequest(http.MethodGet, path, nil)
+	req, err := s.client.NewRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	root := new(ProjectDetails)
-	resp, err := p.svc.client.Do(ctx, req, root)
+	resp, err := s.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
 	}
