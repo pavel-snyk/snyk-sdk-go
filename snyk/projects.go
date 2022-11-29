@@ -104,7 +104,7 @@ type ProjectRemediation struct {
 	Pin     struct{} `json:"pin"`
 }
 
-func (s *ProjectsService) AddTag(ctx context.Context, p *Project, key string, value string) ([]Tag, *Response, error) {
+func (s *ProjectsService) AddTag(ctx context.Context, p *Project, key string, value string) (*Tag, *Response, error) {
 	path := fmt.Sprintf(projectTagsPath, p.OrgId, p.ID)
 
 	req, err := s.client.NewRequest(http.MethodPost, path, projectAddTagRequest{
@@ -115,13 +115,13 @@ func (s *ProjectsService) AddTag(ctx context.Context, p *Project, key string, va
 		return nil, nil, err
 	}
 
-	root := new([]Tag)
-	resp, err := s.client.Do(ctx, req, root)
+	var tag Tag
+	resp, err := s.client.Do(ctx, req, &tag)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return *root, resp, nil
+	return &tag, resp, nil
 }
 
 func (s *ProjectsService) Details(ctx context.Context, p *Project) (*ProjectDetails, *Response, error) {
@@ -140,3 +140,20 @@ func (s *ProjectsService) Details(ctx context.Context, p *Project) (*ProjectDeta
 
 	return root, resp, nil
 }
+
+func (s *ProjectsService) Delete(ctx context.Context, p *Project) (*ProjectDetails, *Response, error) {
+	path := fmt.Sprintf(projectPath, p.OrgId, p.ID)
+
+	req, err := s.client.NewRequest(http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	resp, err := s.client.Do(ctx, req, nil)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return nil, resp, nil
+}
+
