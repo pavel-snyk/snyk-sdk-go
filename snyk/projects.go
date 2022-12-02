@@ -16,9 +16,15 @@ type ProjectsService service
 
 // Project represents a Snyk project.
 type Project struct {
-	ID     string `json:"id,omitempty"`
-	Name   string `json:"name,omitempty"`
-	Origin string `json:"origin,omitempty"`
+	ID                    string      `json:"id,omitempty"`
+	Name                  string      `json:"name,omitempty"`
+	Origin                string      `json:"origin,omitempty"`
+	Type                  string      `json:"type,omitempty"`
+	IssueCountsBySeverity IssueCounts `json:"issueCountsBySeverity"`
+	IsMonitored           bool        `json:"isMonitored"`
+	TargetReference       string      `json:"targetReference"`
+	Branch                string      `json:"branch"`
+	Tags                  []Tag       `json:"tags"`
 
 	OrgId string `json:"-"`
 }
@@ -156,4 +162,3 @@ func (s *ProjectsService) Delete(ctx context.Context, p *Project) (*ProjectDetai
 
 	return nil, resp, nil
 }
-
