@@ -42,9 +42,6 @@ func TestClient_NewClient_defaults(t *testing.T) {
 }
 
 func TestClient_NewClient_withBaseURL(t *testing.T) {
-	setup()
-	defer teardown()
-
 	expectedBaseURL, _ := url.Parse("https://testing.snyk.io/api")
 	client := NewClient("auth-token",
 		WithBaseURL("https://testing.snyk.io/api"),
@@ -54,9 +51,6 @@ func TestClient_NewClient_withBaseURL(t *testing.T) {
 }
 
 func TestClient_NewClient_withHTTPClient(t *testing.T) {
-	setup()
-	defer teardown()
-
 	httpClient := &http.Client{Timeout: 2 * time.Second}
 	client := NewClient("auth-token",
 		WithHTTPClient(httpClient),
@@ -66,9 +60,6 @@ func TestClient_NewClient_withHTTPClient(t *testing.T) {
 }
 
 func TestClient_NewClient_withUserAgent(t *testing.T) {
-	setup()
-	defer teardown()
-
 	client := NewClient("auth-token",
 		WithUserAgent("test-user-agent"),
 	)

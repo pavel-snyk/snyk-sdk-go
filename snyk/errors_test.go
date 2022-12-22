@@ -9,9 +9,6 @@ import (
 )
 
 func TestErrorResponse_Error_withoutSnykRequestID(t *testing.T) {
-	setup()
-	defer teardown()
-
 	errorResponse := &ErrorResponse{
 		Response: &Response{
 			Response: &http.Response{
@@ -35,9 +32,6 @@ func TestErrorResponse_Error_withoutSnykRequestID(t *testing.T) {
 }
 
 func TestErrorResponse_Error_withSnykRequestID(t *testing.T) {
-	setup()
-	defer teardown()
-
 	errorResponse := &ErrorResponse{
 		Response: &Response{
 			Response: &http.Response{
