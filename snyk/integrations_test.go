@@ -250,15 +250,15 @@ func TestIntegrations_GetSettings(t *testing.T) {
 `)
 	})
 	expectedSettings := &IntegrationSettings{
-		DependencyAutoUpgradeEnabled:                  boolPtr(true),
+		DependencyAutoUpgradeEnabled:                  ptr(true),
 		DependencyAutoUpgradeIgnoredDependencies:      []string{"lodash"},
 		DependencyAutoUpgradePullRequestLimit:         3,
-		DependencyAutoUpgradeIncludeMajorVersion:      boolPtr(false),
-		DockerfileDetectionEnabled:                    boolPtr(false),
-		PullRequestFailOnAnyIssue:                     boolPtr(false),
-		PullRequestFailOnlyForIssuesWithFix:           boolPtr(true),
-		PullRequestFailOnlyForHighAndCriticalSeverity: boolPtr(false),
-		PullRequestTestEnabled:                        boolPtr(true),
+		DependencyAutoUpgradeIncludeMajorVersion:      ptr(false),
+		DockerfileDetectionEnabled:                    ptr(false),
+		PullRequestFailOnAnyIssue:                     ptr(false),
+		PullRequestFailOnlyForIssuesWithFix:           ptr(true),
+		PullRequestFailOnlyForHighAndCriticalSeverity: ptr(false),
+		PullRequestTestEnabled:                        ptr(true),
 	}
 
 	actualSettings, _, err := client.Integrations.GetSettings(ctx, "long-uuid", "fef79ea8-3ad4-4598-ae11-d8730ede2382")
@@ -283,9 +283,9 @@ func TestIntegrations_UpdateSettings(t *testing.T) {
 
 	input := &IntegrationSettingsUpdateRequest{
 		IntegrationSettings: &IntegrationSettings{
-			DependencyAutoUpgradeEnabled: boolPtr(true),
-			DockerfileDetectionEnabled:   boolPtr(false),
-			PullRequestTestEnabled:       boolPtr(true),
+			DependencyAutoUpgradeEnabled: ptr(true),
+			DockerfileDetectionEnabled:   ptr(false),
+			PullRequestTestEnabled:       ptr(true),
 		},
 	}
 	mux.HandleFunc("/org/long-uuid/integrations/fef79ea8-3ad4-4598-ae11-d8730ede2382/settings", func(w http.ResponseWriter, r *http.Request) {
@@ -302,9 +302,9 @@ func TestIntegrations_UpdateSettings(t *testing.T) {
 `)
 	})
 	expectedSettings := &IntegrationSettings{
-		DependencyAutoUpgradeEnabled: boolPtr(true),
-		DockerfileDetectionEnabled:   boolPtr(false),
-		PullRequestTestEnabled:       boolPtr(true),
+		DependencyAutoUpgradeEnabled: ptr(true),
+		DockerfileDetectionEnabled:   ptr(false),
+		PullRequestTestEnabled:       ptr(true),
 	}
 
 	actualSettings, _, err := client.Integrations.UpdateSettings(ctx, "long-uuid", "fef79ea8-3ad4-4598-ae11-d8730ede2382", input)
