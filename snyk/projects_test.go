@@ -45,6 +45,9 @@ func TestProject_List(t *testing.T) {
 }
 
 func TestProject_List_emptyOrganizationID(t *testing.T) {
+	setup()
+	defer teardown()
+
 	_, _, err := client.Projects.List(ctx, "")
 
 	assert.Error(t, err)

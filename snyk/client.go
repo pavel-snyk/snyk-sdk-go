@@ -31,6 +31,7 @@ type Client struct {
 
 	common service // reuse a single struct instead of allocating one for each service on the heap.
 
+	Dependencies *DependenciesService
 	Integrations *IntegrationsService
 	Orgs         *OrgsService
 	Projects     *ProjectsService
@@ -85,6 +86,7 @@ func NewClient(token string, opts ...ClientOption) *Client {
 
 	c.common.client = c
 
+	c.Dependencies = (*DependenciesService)(&c.common)
 	c.Integrations = (*IntegrationsService)(&c.common)
 	c.Orgs = (*OrgsService)(&c.common)
 	c.Projects = (*ProjectsService)(&c.common)

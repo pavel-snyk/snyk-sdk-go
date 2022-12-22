@@ -34,6 +34,9 @@ func TestIntegrations_List(t *testing.T) {
 }
 
 func TestIntegrations_List_emptyOrganizationID(t *testing.T) {
+	setup()
+	defer teardown()
+
 	_, _, err := client.Integrations.List(ctx, "")
 
 	assert.Error(t, err)
@@ -61,6 +64,9 @@ func TestIntegrations_GetByType(t *testing.T) {
 }
 
 func TestIntegrations_GetByType_emptyOrganizationID(t *testing.T) {
+	setup()
+	defer teardown()
+
 	_, _, err := client.Integrations.GetByType(ctx, "", GitHubIntegrationType)
 
 	assert.Error(t, err)
@@ -68,6 +74,9 @@ func TestIntegrations_GetByType_emptyOrganizationID(t *testing.T) {
 }
 
 func TestIntegrations_GetByType_emptyIntegrationType(t *testing.T) {
+	setup()
+	defer teardown()
+
 	_, _, err := client.Integrations.GetByType(ctx, "long-uuid", "")
 
 	assert.Error(t, err)
@@ -107,6 +116,9 @@ func TestIntegrations_Create(t *testing.T) {
 }
 
 func TestIntegrations_Create_emptyOrganizationID(t *testing.T) {
+	setup()
+	defer teardown()
+
 	_, _, err := client.Integrations.Create(ctx, "", &IntegrationCreateRequest{})
 
 	assert.Error(t, err)
@@ -114,6 +126,9 @@ func TestIntegrations_Create_emptyOrganizationID(t *testing.T) {
 }
 
 func TestIntegrations_Create_emptyPayload(t *testing.T) {
+	setup()
+	defer teardown()
+
 	_, _, err := client.Integrations.Create(ctx, "long-uuid", nil)
 
 	assert.Error(t, err)
@@ -152,6 +167,9 @@ func TestIntegrations_Update(t *testing.T) {
 }
 
 func TestIntegrations_Update_emptyOrganizationID(t *testing.T) {
+	setup()
+	defer teardown()
+
 	_, _, err := client.Integrations.Update(ctx, "", "integration-id", &IntegrationUpdateRequest{})
 
 	assert.Error(t, err)
@@ -159,6 +177,9 @@ func TestIntegrations_Update_emptyOrganizationID(t *testing.T) {
 }
 
 func TestIntegrations_Update_emptyIntegrationID(t *testing.T) {
+	setup()
+	defer teardown()
+
 	_, _, err := client.Integrations.Update(ctx, "long-uuid", "", &IntegrationUpdateRequest{})
 
 	assert.Error(t, err)
@@ -166,6 +187,9 @@ func TestIntegrations_Update_emptyIntegrationID(t *testing.T) {
 }
 
 func TestIntegrations_Update_emptyPayload(t *testing.T) {
+	setup()
+	defer teardown()
+
 	_, _, err := client.Integrations.Update(ctx, "long-uuid", "integration-id", nil)
 
 	assert.Error(t, err)
@@ -186,6 +210,9 @@ func TestIntegrations_DeleteCredentials(t *testing.T) {
 }
 
 func TestIntegrations_DeleteCredentials_emptyOrganizationID(t *testing.T) {
+	setup()
+	defer teardown()
+
 	_, err := client.Integrations.DeleteCredentials(ctx, "", "fef79ea8-3ad4-4598-ae11-d8730ede2382")
 
 	assert.Error(t, err)
@@ -193,6 +220,9 @@ func TestIntegrations_DeleteCredentials_emptyOrganizationID(t *testing.T) {
 }
 
 func TestIntegrations_DeleteCredentials_emptyIntegrationID(t *testing.T) {
+	setup()
+	defer teardown()
+
 	_, err := client.Integrations.DeleteCredentials(ctx, "long-uuid", "")
 
 	assert.Error(t, err)
@@ -220,15 +250,15 @@ func TestIntegrations_GetSettings(t *testing.T) {
 `)
 	})
 	expectedSettings := &IntegrationSettings{
-		DependencyAutoUpgradeEnabled:                  boolPtr(true),
+		DependencyAutoUpgradeEnabled:                  ptr(true),
 		DependencyAutoUpgradeIgnoredDependencies:      []string{"lodash"},
 		DependencyAutoUpgradePullRequestLimit:         3,
-		DependencyAutoUpgradeIncludeMajorVersion:      boolPtr(false),
-		DockerfileDetectionEnabled:                    boolPtr(false),
-		PullRequestFailOnAnyIssue:                     boolPtr(false),
-		PullRequestFailOnlyForIssuesWithFix:           boolPtr(true),
-		PullRequestFailOnlyForHighAndCriticalSeverity: boolPtr(false),
-		PullRequestTestEnabled:                        boolPtr(true),
+		DependencyAutoUpgradeIncludeMajorVersion:      ptr(false),
+		DockerfileDetectionEnabled:                    ptr(false),
+		PullRequestFailOnAnyIssue:                     ptr(false),
+		PullRequestFailOnlyForIssuesWithFix:           ptr(true),
+		PullRequestFailOnlyForHighAndCriticalSeverity: ptr(false),
+		PullRequestTestEnabled:                        ptr(true),
 	}
 
 	actualSettings, _, err := client.Integrations.GetSettings(ctx, "long-uuid", "fef79ea8-3ad4-4598-ae11-d8730ede2382")
@@ -238,6 +268,9 @@ func TestIntegrations_GetSettings(t *testing.T) {
 }
 
 func TestIntegrations_GetSettings_emptyOrganizationID(t *testing.T) {
+	setup()
+	defer teardown()
+
 	_, _, err := client.Integrations.GetSettings(ctx, "", "integration-id")
 
 	assert.Error(t, err)
@@ -250,9 +283,9 @@ func TestIntegrations_UpdateSettings(t *testing.T) {
 
 	input := &IntegrationSettingsUpdateRequest{
 		IntegrationSettings: &IntegrationSettings{
-			DependencyAutoUpgradeEnabled: boolPtr(true),
-			DockerfileDetectionEnabled:   boolPtr(false),
-			PullRequestTestEnabled:       boolPtr(true),
+			DependencyAutoUpgradeEnabled: ptr(true),
+			DockerfileDetectionEnabled:   ptr(false),
+			PullRequestTestEnabled:       ptr(true),
 		},
 	}
 	mux.HandleFunc("/org/long-uuid/integrations/fef79ea8-3ad4-4598-ae11-d8730ede2382/settings", func(w http.ResponseWriter, r *http.Request) {
@@ -269,9 +302,9 @@ func TestIntegrations_UpdateSettings(t *testing.T) {
 `)
 	})
 	expectedSettings := &IntegrationSettings{
-		DependencyAutoUpgradeEnabled: boolPtr(true),
-		DockerfileDetectionEnabled:   boolPtr(false),
-		PullRequestTestEnabled:       boolPtr(true),
+		DependencyAutoUpgradeEnabled: ptr(true),
+		DockerfileDetectionEnabled:   ptr(false),
+		PullRequestTestEnabled:       ptr(true),
 	}
 
 	actualSettings, _, err := client.Integrations.UpdateSettings(ctx, "long-uuid", "fef79ea8-3ad4-4598-ae11-d8730ede2382", input)
@@ -281,6 +314,9 @@ func TestIntegrations_UpdateSettings(t *testing.T) {
 }
 
 func TestIntegrations_UpdateSettings_emptyOrganizationID(t *testing.T) {
+	setup()
+	defer teardown()
+
 	_, _, err := client.Integrations.UpdateSettings(ctx, "", "integration-id", &IntegrationSettingsUpdateRequest{})
 
 	assert.Error(t, err)
@@ -288,6 +324,9 @@ func TestIntegrations_UpdateSettings_emptyOrganizationID(t *testing.T) {
 }
 
 func TestIntegrations_UpdateSettings_emptyIntegrationID(t *testing.T) {
+	setup()
+	defer teardown()
+
 	_, _, err := client.Integrations.UpdateSettings(ctx, "long-uuid", "", &IntegrationSettingsUpdateRequest{})
 
 	assert.Error(t, err)
@@ -295,6 +334,9 @@ func TestIntegrations_UpdateSettings_emptyIntegrationID(t *testing.T) {
 }
 
 func TestIntegrations_UpdateSettings_emptyPayload(t *testing.T) {
+	setup()
+	defer teardown()
+
 	_, _, err := client.Integrations.UpdateSettings(ctx, "long-uuid", "integration-id", nil)
 
 	assert.Error(t, err)
