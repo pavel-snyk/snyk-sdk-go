@@ -86,6 +86,9 @@ func TestOrgs_Create(t *testing.T) {
 }
 
 func TestOrgs_Create_emptyPayload(t *testing.T) {
+	setup()
+	defer teardown()
+
 	_, _, err := client.Orgs.Create(ctx, nil)
 
 	assert.Error(t, err)
@@ -106,6 +109,9 @@ func TestOrgs_Delete(t *testing.T) {
 }
 
 func TestOrgs_Delete_emptyOrganizationID(t *testing.T) {
+	setup()
+	defer teardown()
+
 	_, err := client.Orgs.Delete(ctx, "")
 
 	assert.Error(t, err)
