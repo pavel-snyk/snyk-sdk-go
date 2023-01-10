@@ -16,12 +16,13 @@ type ProjectsService service
 
 // Project represents a Snyk project.
 type Project struct {
-	ID                    string      `json:"id,omitempty"`
 	Name                  string      `json:"name,omitempty"`
+	ID                    string      `json:"id,omitempty"`
 	Origin                string      `json:"origin,omitempty"`
 	Type                  string      `json:"type,omitempty"`
 	IssueCountsBySeverity IssueCounts `json:"issueCountsBySeverity"`
 	IsMonitored           bool        `json:"isMonitored"`
+	RemoteRepoUrl         string      `json:"remoteRepoUrl"`
 	TargetReference       string      `json:"targetReference"`
 	Branch                string      `json:"branch"`
 	Tags                  []Tag       `json:"tags"`
