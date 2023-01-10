@@ -20,6 +20,13 @@ type User struct {
 	Organizations []Organization `json:"orgs,omitempty"`
 }
 
+type UserRef struct {
+	Id       string `json:"id"`
+	Name     string `json:"name"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+}
+
 // GetCurrent retrieves information about the user making the request.
 //
 // Note: the retrieved user will include information about organizations
