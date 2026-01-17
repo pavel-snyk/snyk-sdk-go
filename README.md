@@ -1,6 +1,6 @@
 # Snyk SDK for Go
 
-[![Build](https://img.shields.io/github/workflow/status/pavel-snyk/snyk-sdk-go/Build?label=unit+tests)](https://github.com/pavel-snyk/snyk-sdk-go/actions/workflows/tests.yaml)
+[![Build](https://img.shields.io/github/actions/workflow/status/pavel-snyk/snyk-sdk-go/tests.yaml?branch=main)](https://github.com/pavel-snyk/snyk-sdk-go/actions/workflows/tests.yaml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/pavel-snyk/snyk-sdk-go)](https://goreportcard.com/report/github.com/pavel-snyk/snyk-sdk-go)
 [![GoDoc](https://img.shields.io/badge/pkg.go.dev-doc-blue)](https://pkg.go.dev/github.com/pavel-snyk/snyk-sdk-go)
 [![Release](https://img.shields.io/github/v/tag/pavel-snyk/snyk-sdk-go?label=release)](https://github.com/pavel-snyk/snyk-sdk-go/releases)
@@ -18,13 +18,13 @@ snyk-sdk-go is the (un)official Snyk SDK for the Go programming language.
 go get github.com/pavel-snyk/snyk-sdk-go@vX.Y.Z
 
 # for non Go modules usage or latest version
-go get github.com/pavel-snyk/snyk-sdk-go
+go get github.com/pavel-snyk/snyk-sdk-go/v2
 ```
 
 ## Usage
 
 ```go
-import "github.com/pavel-snyk/snyk-sdk-go"
+import "github.com/pavel-snyk/snyk-sdk-go/v2"
 ```
 
 Create a new Snyk client, then use the exposed services to access different
