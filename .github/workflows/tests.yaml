@@ -11,19 +11,15 @@ jobs:
   unit_tests:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        go-version: [ 1.24, 1.25 ]
-
-    name: unit tests (go ${{ matrix.go-version }})
+    name: unit tests
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Go ${{ matrix.go-version }}
+      - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version-file: "go.mod"
 
       - name: Fix permissions for cache directories
         run: chmod -R 0755 ~/.cache/go-build ~/go/pkg/mod || true
@@ -34,7 +30,7 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('go.sum', 'tools/go.sum') }}-${{ matrix.go-version }}
+          key: ${{ runner.os }}-go-${{ hashFiles('go.sum', 'tools/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
 
