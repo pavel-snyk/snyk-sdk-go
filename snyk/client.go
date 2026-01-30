@@ -8,14 +8,19 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"reflect"
+	"slices"
 	"strings"
 	"time"
+
+	"github.com/google/go-querystring/query"
 )
 
 const (
-	libraryVersion   = "0.4.1"
-	defaultBaseURL   = "https://snyk.io/api/"
-	defaultMediaType = "application/json"
+	libraryVersion = "0.5.0"
+
+	defaultRegion    = "SNYK-US-01"
+	defaultMediaType = "application/vnd.api+json"
 	defaultUserAgent = "snyk-sdk-go/" + libraryVersion + " (+https://github.com/pavel-snyk/snyk-sdk-go)"
 
 	headerSnykRequestID = "snyk-request-id"
@@ -25,49 +30,156 @@ const (
 type Client struct {
 	httpClient *http.Client
 
-	baseURL   *url.URL // base URL for API requests.
+	appBaseURL  *url.URL // base URL for App related requests (used to get access token).
+	restBaseURL *url.URL // base URL for REST API requests.
+
 	userAgent string
 	token     string
 
 	common service // reuse a single struct instead of allocating one for each service on the heap.
 
-	Integrations *IntegrationsService
-	Orgs         *OrgsService
-	Projects     *ProjectsService
-	Users        *UsersService
+	Apps AppsServiceAPI
+}
+
+// Region is used to configure the SDK to communicate with different Snyk regional instances.
+// Snyk operates several independent, isolated instances (e.g. in the US, EU and AU).
+//
+// Snyk docs: https://docs.snyk.io/snyk-data-and-governance/regional-hosting-and-data-residency#api-urls
+type Region struct {
+	Alias       string
+	AppBaseURL  string
+	RESTBaseURL string
+}
+
+var regions = []Region{
+	{
+		Alias:       defaultRegion,
+		AppBaseURL:  "https://app.snyk.io/",
+		RESTBaseURL: "https://api.snyk.io/rest/",
+	},
+	{
+		Alias:       "SNYK-US-02",
+		AppBaseURL:  "https://app.us.snyk.io/",
+		RESTBaseURL: "https://api.us.snyk.io/rest/",
+	},
+	{
+		Alias:       "SNYK-EU-01",
+		AppBaseURL:  "https://app.eu.snyk.io/",
+		RESTBaseURL: "https://app.eu.snyk.io/rest/",
+	},
+	{
+		Alias:       "SNYK-AU-01",
+		AppBaseURL:  "https://app.au.snyk.io/",
+		RESTBaseURL: "https://api.au.snyk.io/rest/",
+	},
+}
+
+// Regions provides a slice of all supported Snyk Regions.
+func Regions() []Region {
+	regionsCopy := make([]Region, len(regions))
+	copy(regionsCopy, regions)
+	return regionsCopy
 }
 
 type service struct {
 	client *Client
 }
 
-type ClientOption func(*Client)
+type BaseOptions struct {
+	// The requested API version. This query parameter is required.
+	Version string `url:"version"`
+}
 
-// WithBaseURL configures Client to use a specific API endpoint.
-func WithBaseURL(baseURL string) ClientOption {
-	return func(client *Client) {
-		parsedURL, _ := url.Parse(baseURL)
-		client.baseURL = parsedURL
+// ListOptions specifies the optional parameters to various List methods.
+type ListOptions struct {
+	BaseOptions
+
+	// The page of results immediately after this cursor.
+	StartingAfter string `url:"starting_after,omitempty"`
+
+	// The page of results immediately before this cursor.
+	EndingBefore string `url:"ending_before,omitempty"`
+
+	// Number of results to return per page
+	Limit int `url:"limit,omitempty"`
+}
+
+// addOptions adds the parameters in opts as URL query parameters to s.
+// opts must be a struct whose  fields may contain "url" tags.
+func addOptions(s string, opts any) (string, error) {
+	v := reflect.ValueOf(opts)
+	if v.Kind() == reflect.Ptr && v.IsNil() {
+		return s, nil
+	}
+
+	u, err := url.Parse(s)
+	if err != nil {
+		return s, err
+	}
+
+	qs, err := query.Values(opts)
+	if err != nil {
+		return s, err
+	}
+
+	u.RawQuery = qs.Encode()
+	return u.String(), nil
+}
+
+type ClientOption func(*Client) error
+
+// WithRegionAlias configures Client to use a Snyk Region by querying Regions by Region.Alias.
+func WithRegionAlias(regionAlias string) ClientOption {
+	return func(client *Client) error {
+		regionIndex := slices.IndexFunc(regions, func(r Region) bool {
+			return r.Alias == regionAlias
+		})
+		if regionIndex == -1 {
+			return fmt.Errorf("region with alias (%s) not found", regionAlias)
+		}
+
+		region := regions[regionIndex]
+		return WithRegion(region)(client)
+	}
+}
+
+// WithRegion configures Client to use a specific Snyk Region.
+func WithRegion(region Region) ClientOption {
+	return func(client *Client) error {
+		parsedAppBaseURL, err := url.Parse(region.AppBaseURL)
+		if err != nil {
+			return fmt.Errorf("invalid AppBaseURL: %w", err)
+		}
+		client.appBaseURL = parsedAppBaseURL
+
+		parsedRestBaseURL, err := url.Parse(region.RESTBaseURL)
+		if err != nil {
+			return fmt.Errorf("invalid RESTBaseURL: %w", err)
+		}
+		client.restBaseURL = parsedRestBaseURL
+
+		return nil
 	}
 }
 
 // WithHTTPClient configures Client to use a specific http client for communication.
 func WithHTTPClient(httpClient *http.Client) ClientOption {
-	return func(client *Client) {
+	return func(client *Client) error {
 		client.httpClient = httpClient
+		return nil
 	}
 }
 
 // WithUserAgent configures Client to use a specific user agent.
 func WithUserAgent(userAgent string) ClientOption {
-	return func(client *Client) {
+	return func(client *Client) error {
 		client.userAgent = userAgent
+		return nil
 	}
 }
 
 // NewClient creates a new Snyk API client.
-func NewClient(token string, opts ...ClientOption) *Client {
-	baseURL, _ := url.Parse(defaultBaseURL)
+func NewClient(token string, opts ...ClientOption) (*Client, error) {
 	httpClient := &http.Client{
 		Timeout: 15 * time.Second,
 	}
@@ -75,30 +187,36 @@ func NewClient(token string, opts ...ClientOption) *Client {
 	c := &Client{
 		httpClient: httpClient,
 
-		baseURL:   baseURL,
 		userAgent: defaultUserAgent,
 		token:     token,
 	}
+
+	// apply default region first, can be overridden by options later
+	if err := WithRegionAlias(defaultRegion)(c); err != nil {
+		return nil, err
+	}
+
+	// apply user options
 	for _, opt := range opts {
-		opt(c)
+		if err := opt(c); err != nil {
+			return nil, err
+		}
 	}
 
 	c.common.client = c
 
-	c.Integrations = (*IntegrationsService)(&c.common)
-	c.Orgs = (*OrgsService)(&c.common)
-	c.Projects = (*ProjectsService)(&c.common)
-	c.Users = (*UsersService)(&c.common)
+	c.Apps = (*AppsService)(&c.common)
 
-	return c
+	return c, nil
 }
 
-// NewRequest creates an API request.
-func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Request, error) {
-	if !strings.HasSuffix(c.baseURL.Path, "/") {
-		return nil, fmt.Errorf("baseURL must have a trailing slash, but %q does not", c.baseURL)
+// prepareRequest creates an API request. A relative URL can be provided in endpointURL, which will be resolved to the baseURL.
+func (c *Client) prepareRequest(ctx context.Context, method string, baseURL *url.URL, endpointURL string, body any) (*http.Request, error) {
+	if strings.HasPrefix(endpointURL, "/") {
+		return nil, fmt.Errorf("endpointURL %q is invalid, cannot begin with a leading slash", endpointURL)
 	}
-	u, err := c.baseURL.Parse(urlStr)
+
+	u, err := baseURL.Parse(endpointURL)
 	if err != nil {
 		return nil, err
 	}
@@ -111,12 +229,12 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 		}
 	}
 
-	req, err := http.NewRequest(method, u.String(), buf)
+	req, err := http.NewRequestWithContext(ctx, method, u.String(), buf)
 	if err != nil {
 		return nil, err
 	}
 	if req.Header.Get("Authorization") == "" {
-		req.Header.Set("Authorization", fmt.Sprintf("token %s", c.token))
+		req.Header.Set("Authorization", fmt.Sprintf("Token %s", c.token))
 	}
 	req.Header.Set("Accept", defaultMediaType)
 	req.Header.Set("Content-Type", defaultMediaType)
@@ -125,16 +243,8 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 	return req, nil
 }
 
-// Response is a Snyk response. This wraps the standard http.Response.
-type Response struct {
-	*http.Response
-
-	SnykRequestID string // SnykRequestID returned from the API, useful to contact support.
-}
-
-// Do sends an API request and returns the API response.
-func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*Response, error) {
-	req = req.WithContext(ctx)
+// do sends an API request and returns the API response.
+func (c *Client) do(ctx context.Context, req *http.Request, v interface{}) (*Response, error) {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		// if we got an error and the context has been canceled, the context's error is more useful.
@@ -151,12 +261,12 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*Res
 	}()
 
 	response := newResponse(resp)
-	err = CheckResponse(response)
+	err = checkResponse(response)
 	if err != nil {
 		return response, err
 	}
 
-	if v != nil {
+	if resp.StatusCode != http.StatusNoContent && v != nil {
 		if w, ok := v.(io.Writer); ok {
 			_, err := io.Copy(w, resp.Body)
 			if err != nil {
@@ -177,6 +287,13 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*Res
 	return response, err
 }
 
+// Response is a Snyk response. This wraps the standard http.Response.
+type Response struct {
+	*http.Response
+
+	SnykRequestID string // SnykRequestID returned from the API, useful to contact support.
+}
+
 // newResponse creates a new Response for the provided http.Response. r must be not nil.
 func newResponse(r *http.Response) *Response {
 	response := &Response{Response: r}
@@ -190,9 +307,9 @@ func (r *Response) populateSnykRequestID() {
 	}
 }
 
-// CheckResponse verifies the API responds for errors, and returns them if present.
+// checkResponse verifies the API responds for errors, and returns them if present.
 // A response is considered an error if it has a status code outside the 200 range.
-func CheckResponse(resp *Response) error {
+func checkResponse(resp *Response) error {
 	if code := resp.StatusCode; code >= 200 && code <= 299 {
 		return nil
 	}
@@ -200,10 +317,16 @@ func CheckResponse(resp *Response) error {
 	errorResponse := &ErrorResponse{Response: resp}
 	data, err := io.ReadAll(resp.Body)
 	if err == nil && len(data) > 0 {
-		err := json.Unmarshal(data, &errorResponse.ErrorElement)
-		if err != nil {
-			return err
+		// inline jsonapi error struct to keep ErrorResponse clean and simple.
+		var root struct {
+			APIErrors []APIError `json:"errors,omitempty"`
 		}
+		err := json.Unmarshal(data, &root)
+		if err != nil {
+			// in case response body was not valid jsonapi error, include raw response body for debugging
+			return fmt.Errorf("failed to decode Snyk API error response: %w; body: %s", err, string(data))
+		}
+		errorResponse.APIErrors = root.APIErrors
 	}
 	return errorResponse
 }
