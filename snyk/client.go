@@ -291,6 +291,9 @@ func (c *Client) do(ctx context.Context, req *http.Request, v interface{}) (*Res
 type Response struct {
 	*http.Response
 
+	// Links that were returned with the response. These are parsed from request body and not the header.
+	Links *PaginatedLinks
+
 	SnykRequestID string // SnykRequestID returned from the API, useful to contact support.
 }
 

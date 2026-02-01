@@ -89,7 +89,8 @@ type appInstallRoot struct {
 func (air appInstallRoot) String() string { return Stringify(air) }
 
 type appInstallsRoot struct {
-	AppInstalls []AppInstall `json:"data"`
+	AppInstalls []AppInstall    `json:"data"`
+	Links       *PaginatedLinks `json:"links,omitempty"`
 }
 
 func (ai AppInstall) String() string { return Stringify(ai) }
@@ -118,6 +119,9 @@ func (s *AppsService) ListAppInstallsForOrg(ctx context.Context, orgID string, o
 	resp, err := s.client.do(ctx, req, &root)
 	if err != nil {
 		return nil, resp, err
+	}
+	if l := root.Links; l != nil {
+		resp.Links = l
 	}
 
 	return root.AppInstalls, resp, nil
