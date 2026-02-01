@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	libraryVersion = "0.5.0"
+	libraryVersion = "2.0.0-dev"
 
 	defaultRegion    = "SNYK-US-01"
 	defaultMediaType = "application/vnd.api+json"
