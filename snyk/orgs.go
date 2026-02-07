@@ -2,6 +2,8 @@ package snyk
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"iter"
 	"net/http"
 )
@@ -28,6 +30,11 @@ type OrgsServiceAPI interface {
 	//
 	// Note: This function is experimental and its signature may change in a future release.
 	AllAccessibleOrgs(ctx context.Context, opts *ListOptions) (iter.Seq2[Organization, *Response], func() error)
+
+	// Get provides the full details of an organization.
+	//
+	// See: https://docs.snyk.io/snyk-api/reference/orgs#get-orgs-org_id
+	Get(ctx context.Context, orgID string) (*Organization, *Response, error)
 }
 
 // OrgsService handles communication with the org related methods of the Snyk API.
@@ -58,7 +65,7 @@ type ListOrganizationOptions struct {
 }
 
 type orgRoot struct {
-	Data *Organization `json:"data,omitempty"`
+	Organization *Organization `json:"data,omitempty"`
 }
 
 type orgsRoot struct {
@@ -106,4 +113,29 @@ func (s *OrgsService) AllAccessibleOrgs(ctx context.Context, opts *ListOptions) 
 		opts.Version = orgsAPIVersion
 	}
 	return newPaginator[Organization](ctx, s.client, s.client.restBaseURL, orgsBasePath, opts)
+}
+
+func (s *OrgsService) Get(ctx context.Context, orgID string) (*Organization, *Response, error) {
+	if orgID == "" {
+		return nil, nil, errors.New("failed to get org: id must be supplied")
+	}
+
+	opts := &BaseOptions{Version: orgsAPIVersion}
+	path, err := addOptions(fmt.Sprintf("%v/%v", orgsBasePath, orgID), opts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.prepareRequest(ctx, http.MethodGet, s.client.restBaseURL, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(orgRoot)
+	resp, err := s.client.do(ctx, req, &root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.Organization, resp, nil
 }

@@ -83,7 +83,7 @@ type ListAppInstallOptions struct {
 }
 
 type appInstallRoot struct {
-	AppInstalls *AppInstall `json:"data"`
+	AppInstall *AppInstall `json:"data"`
 }
 
 func (air appInstallRoot) String() string { return Stringify(air) }
@@ -169,7 +169,7 @@ func (s *AppsService) CreateAppInstallForOrg(ctx context.Context, orgID, appID s
 		return nil, resp, err
 	}
 
-	return appInstallRoot.AppInstalls, resp, nil
+	return appInstallRoot.AppInstall, resp, nil
 }
 
 func (s *AppsService) DeleteAppInstallFromOrg(ctx context.Context, orgID, appInstallID string) (*Response, error) {
