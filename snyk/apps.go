@@ -41,7 +41,7 @@ var _ AppsServiceAPI = &AppsService{}
 
 // App represents a Snyk app.
 //
-// See: https://docs.snyk.io/snyk-api/using-specific-snyk-apis/snyk-apps-apis/about-snyk-apps
+// See: https://docs.snyk.io/discover-snyk/getting-started/glossary#snyk-apps
 type App struct {
 	ID         string         `json:"id"`                   // The App identifier.
 	Type       string         `json:"type"`                 // The resource type `app`.

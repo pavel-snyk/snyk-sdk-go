@@ -39,6 +39,7 @@ type Client struct {
 	common service // reuse a single struct instead of allocating one for each service on the heap.
 
 	Apps AppsServiceAPI
+	Orgs OrgsServiceAPI
 }
 
 // Region is used to configure the SDK to communicate with different Snyk regional instances.
@@ -206,6 +207,7 @@ func NewClient(token string, opts ...ClientOption) (*Client, error) {
 	c.common.client = c
 
 	c.Apps = (*AppsService)(&c.common)
+	c.Orgs = (*OrgsService)(&c.common)
 
 	return c, nil
 }
