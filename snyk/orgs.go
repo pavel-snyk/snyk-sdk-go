@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"iter"
 	"net/http"
+	"time"
 )
 
 const (
@@ -34,7 +35,7 @@ type OrgsServiceAPI interface {
 	// Get provides the full details of an organization.
 	//
 	// See: https://docs.snyk.io/snyk-api/reference/orgs#get-orgs-org_id
-	Get(ctx context.Context, orgID string) (*Organization, *Response, error)
+	Get(ctx context.Context, orgID string, opts *GetOrganizationOptions) (*Organization, *Response, error)
 }
 
 // OrgsService handles communication with the org related methods of the Snyk API.
@@ -46,22 +47,34 @@ var _ OrgsServiceAPI = &OrgsService{}
 //
 // See: https://docs.snyk.io/discover-snyk/getting-started/glossary#organization
 type Organization struct {
-	ID         string                  `json:"id"`                   // The Organization identifier.
-	Type       string                  `json:"type"`                 // The resource type `org`.
-	Attributes *OrganizationAttributes `json:"attributes,omitempty"` // The Organization resource data.
+	ID            string                     `json:"id"`                      // The Organization identifier.
+	Type          string                     `json:"type"`                    // The resource type `org`.
+	Attributes    *OrganizationAttributes    `json:"attributes,omitempty"`    // The Organization resource data.
+	Relationships *OrganizationRelationships `json:"relationships,omitempty"` // The relationships object describing relationships between Organization and Tenant.
 }
 
 type OrganizationAttributes struct {
-	GroupID    string `json:"group_id,omitempty"` // The ID of the group to which the organization belongs.
-	IsPersonal bool   `json:"is_personal"`        // Whether the organization is independent (that is, not part of a group).
-	Name       string `json:"name"`               // The display name of the organization.
-	Slug       string `json:"slug"`               // The canonical (unique and URL-friendly) name of the organization.
+	CreatedAt  time.Time `json:"created_at,omitempty"` // The time the Organization was created.
+	GroupID    string    `json:"group_id,omitempty"`   // The ID of the group to which the Organization belongs.
+	IsPersonal bool      `json:"is_personal"`          // Whether the Organization is independent (that is, not part of a group).
+	Name       string    `json:"name"`                 // The display name of the Organization.
+	Slug       string    `json:"slug"`                 // The canonical (unique and URL-friendly) name of the Organization.
+	UpdatedAt  time.Time `json:"updated_at,omitempty"` // The time the Organization was last modified.
+}
+
+type OrganizationRelationships struct {
+	Tenant *tenantRoot `json:"tenant,omitempty"`
 }
 
 type ListOrganizationOptions struct {
 	ListOptions
 	GroupID string `url:"group_id,omitempty"` // If set, only return organizations within the specified group.
 	Expand  string `url:"expand,omitempty"`
+}
+
+type GetOrganizationOptions struct {
+	ListOptions
+	Expand string `url:"expand,omitempty"`
 }
 
 type orgRoot struct {
@@ -115,12 +128,16 @@ func (s *OrgsService) AllAccessibleOrgs(ctx context.Context, opts *ListOptions) 
 	return newPaginator[Organization](ctx, s.client, s.client.restBaseURL, orgsBasePath, opts)
 }
 
-func (s *OrgsService) Get(ctx context.Context, orgID string) (*Organization, *Response, error) {
+func (s *OrgsService) Get(ctx context.Context, orgID string, opts *GetOrganizationOptions) (*Organization, *Response, error) {
 	if orgID == "" {
 		return nil, nil, errors.New("failed to get org: id must be supplied")
 	}
 
-	opts := &BaseOptions{Version: orgsAPIVersion}
+	if opts == nil {
+		opts = &GetOrganizationOptions{Expand: "tenant"}
+	}
+	opts.Version = orgsAPIVersion
+
 	path, err := addOptions(fmt.Sprintf("%v/%v", orgsBasePath, orgID), opts)
 	if err != nil {
 		return nil, nil, err
