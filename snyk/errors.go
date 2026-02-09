@@ -81,3 +81,34 @@ func (r *ErrorResponse) Error() string {
 		r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, strings.Join(errorMessages, ", "),
 	)
 }
+
+func parseRESTError(data []byte) ([]APIError, bool) {
+	var root struct {
+		APIErrors []APIError `json:"errors,omitempty"`
+	}
+
+	if json.Unmarshal(data, &root) == nil && len(root.APIErrors) > 0 {
+		return root.APIErrors, true
+	}
+
+	return nil, false
+}
+
+func parseLegacyV1Error(data []byte, statusCode int) ([]APIError, bool) {
+	var root struct {
+		Message  string `json:"message,omitempty"`
+		ErrorRef string `json:"errorRef,omitempty"`
+	}
+
+	if json.Unmarshal(data, &root) == nil && root.Message != "" {
+		// transform v1 error to standard APIError format
+		return []APIError{{
+			Detail:     root.Message,
+			ID:         root.ErrorRef,
+			StatusCode: fmt.Sprintf("%d", statusCode),
+			Title:      root.Message,
+		}}, true
+	}
+
+	return nil, false
+}

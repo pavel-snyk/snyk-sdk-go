@@ -20,7 +20,8 @@ const (
 	libraryVersion = "2.0.0-dev"
 
 	defaultRegion    = "SNYK-US-01"
-	defaultMediaType = "application/vnd.api+json"
+	defaultMediaType = "application/json"
+	restAPIMediaType = "application/vnd.api+json"
 	defaultUserAgent = "snyk-sdk-go/" + libraryVersion + " (+https://github.com/pavel-snyk/snyk-sdk-go)"
 
 	headerSnykRequestID = "snyk-request-id"
@@ -32,14 +33,16 @@ type Client struct {
 
 	appBaseURL  *url.URL // base URL for App related requests (used to get access token).
 	restBaseURL *url.URL // base URL for REST API requests.
+	v1BaseURL   *url.URL // base URL for V1 API requests.
 
 	userAgent string
 	token     string
 
 	common service // reuse a single struct instead of allocating one for each service on the heap.
 
-	Apps AppsServiceAPI
-	Orgs OrgsServiceAPI
+	Apps   AppsServiceAPI
+	Orgs   OrgsServiceAPI
+	OrgsV1 OrgsServiceV1API
 }
 
 // Region is used to configure the SDK to communicate with different Snyk regional instances.
@@ -50,6 +53,7 @@ type Region struct {
 	Alias       string
 	AppBaseURL  string
 	RESTBaseURL string
+	V1BaseURL   string
 }
 
 var regions = []Region{
@@ -57,21 +61,25 @@ var regions = []Region{
 		Alias:       defaultRegion,
 		AppBaseURL:  "https://app.snyk.io/",
 		RESTBaseURL: "https://api.snyk.io/rest/",
+		V1BaseURL:   "https://api.snyk.io/v1/",
 	},
 	{
 		Alias:       "SNYK-US-02",
 		AppBaseURL:  "https://app.us.snyk.io/",
 		RESTBaseURL: "https://api.us.snyk.io/rest/",
+		V1BaseURL:   "https://api.us.snyk.io/v1/",
 	},
 	{
 		Alias:       "SNYK-EU-01",
 		AppBaseURL:  "https://app.eu.snyk.io/",
 		RESTBaseURL: "https://app.eu.snyk.io/rest/",
+		V1BaseURL:   "https://api.eu.snyk.io/v1/",
 	},
 	{
 		Alias:       "SNYK-AU-01",
 		AppBaseURL:  "https://app.au.snyk.io/",
 		RESTBaseURL: "https://api.au.snyk.io/rest/",
+		V1BaseURL:   "https://api.au.snyk.io/v1/",
 	},
 }
 
@@ -159,6 +167,12 @@ func WithRegion(region Region) ClientOption {
 		}
 		client.restBaseURL = parsedRestBaseURL
 
+		parsedV1BaseURL, err := url.Parse(region.V1BaseURL)
+		if err != nil {
+			return fmt.Errorf("invalid V1BaseURL: %w", err)
+		}
+		client.v1BaseURL = parsedV1BaseURL
+
 		return nil
 	}
 }
@@ -208,6 +222,7 @@ func NewClient(token string, opts ...ClientOption) (*Client, error) {
 
 	c.Apps = (*AppsService)(&c.common)
 	c.Orgs = (*OrgsService)(&c.common)
+	c.OrgsV1 = (*OrgsServiceV1)(&c.common)
 
 	return c, nil
 }
@@ -238,8 +253,13 @@ func (c *Client) prepareRequest(ctx context.Context, method string, baseURL *url
 	if req.Header.Get("Authorization") == "" {
 		req.Header.Set("Authorization", fmt.Sprintf("Token %s", c.token))
 	}
-	req.Header.Set("Accept", defaultMediaType)
-	req.Header.Set("Content-Type", defaultMediaType)
+
+	mediaType := defaultMediaType
+	if baseURL == c.restBaseURL {
+		mediaType = restAPIMediaType
+	}
+	req.Header.Set("Accept", mediaType)
+	req.Header.Set("Content-Type", mediaType)
 	req.Header.Set("User-Agent", c.userAgent)
 
 	return req, nil
@@ -312,8 +332,10 @@ func (r *Response) populateSnykRequestID() {
 	}
 }
 
-// checkResponse verifies the API responds for errors, and returns them if present.
-// A response is considered an error if it has a status code outside the 200 range.
+// checkResponse checks the API response for errors and returns them if present.
+// An error is returned if the status code is outside the 2xx range. It attempts
+// to parse the error body first as a Snyk REST API error (JSON:API), then falls
+// back to the legacy V1 API error format.
 func checkResponse(resp *Response) error {
 	if code := resp.StatusCode; code >= 200 && code <= 299 {
 		return nil
@@ -321,17 +343,20 @@ func checkResponse(resp *Response) error {
 
 	errorResponse := &ErrorResponse{Response: resp}
 	data, err := io.ReadAll(resp.Body)
-	if err == nil && len(data) > 0 {
-		// inline jsonapi error struct to keep ErrorResponse clean and simple.
-		var root struct {
-			APIErrors []APIError `json:"errors,omitempty"`
-		}
-		err := json.Unmarshal(data, &root)
-		if err != nil {
-			// in case response body was not valid jsonapi error, include raw response body for debugging
-			return fmt.Errorf("failed to decode Snyk API error response: %w; body: %s", err, string(data))
-		}
-		errorResponse.APIErrors = root.APIErrors
+	if err != nil || len(data) == 0 {
+		return errorResponse
 	}
-	return errorResponse
+
+	// try parsing as jsonapi error
+	if apiErrors, ok := parseRESTError(data); ok {
+		errorResponse.APIErrors = apiErrors
+		return errorResponse
+	}
+	// fallback to parsing as legacy V1 error
+	if apiErrors, ok := parseLegacyV1Error(data, resp.StatusCode); ok {
+		errorResponse.APIErrors = apiErrors
+		return errorResponse
+	}
+
+	return fmt.Errorf("failed to decode Snyk API error response; status: %d, body: %s", resp.StatusCode, string(data))
 }
