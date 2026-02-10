@@ -1,94 +1,90 @@
 package snyk
 
+import (
+	"context"
+	"errors"
+	"fmt"
+	"net/http"
+)
+
+const orgV1BasePath = "org"
+
+// OrgsServiceV1API is an interface for interacting with the orgs endpoints of the Snyk V1 API.
 //
-//import (
-//	"context"
-//	"fmt"
-//	"net/http"
-//)
+// Note: Snyk V1 API endpoints are being gradually deprecated. It is recommended
+// to use the REST API via OrgsServiceAPI where possible.
 //
-//const orgBasePath = "org"
-//
-//// OrgsService handles communication with the organization related methods of the Snyk API.
-//type OrgsService service
-//
-//// Organization represents a Snyk organization.
-//type Organization struct {
-//	Group *Group `json:"group,omitempty"`
-//	ID    string `json:"id,omitempty"`
-//	Name  string `json:"name,omitempty"`
-//	Slug  string `json:"slug,omitempty"`
-//	URL   string `json:"url,omitempty"`
-//}
-//
-//// Group represents a Snyk group.
-//type Group struct {
-//	ID   string `json:"id,omitempty"`
-//	Name string `json:"name,omitempty"`
-//}
-//
-//// OrganizationCreateRequest represents a request to create an organization.
-//type OrganizationCreateRequest struct {
-//	Name        string `json:"name,omitempty"`
-//	GroupID     string `json:"groupId,omitempty"`
-//	SourceOrgID string `json:"sourceOrgId,omitempty"` // id of the organization to copy settings from.
-//}
-//
-//type organizationsRoot struct {
-//	Organizations []Organization `json:"orgs,omitempty"`
-//}
-//
-//// List provides a list of all organizations a user belongs to.
-//func (s *OrgsService) List(ctx context.Context) ([]Organization, *Response, error) {
-//	req, err := s.client.NewRequest(http.MethodGet, "orgs", nil)
-//	if err != nil {
-//		return nil, nil, err
-//	}
-//
-//	root := new(organizationsRoot)
-//	resp, err := s.client.Do(ctx, req, root)
-//	if err != nil {
-//		return nil, resp, err
-//	}
-//
-//	return root.Organizations, resp, nil
-//}
-//
-//// Create makes a new organization with given payload.
-////
-//// If the [OrganizationCreateRequest.groupID] is not provided, a personal
-//// organization will be created independent of a group.
-//func (s *OrgsService) Create(ctx context.Context, createRequest *OrganizationCreateRequest) (*Organization, *Response, error) {
-//	if createRequest == nil {
-//		return nil, nil, ErrEmptyPayloadNotAllowed
-//	}
-//
-//	req, err := s.client.NewRequest(http.MethodPost, orgBasePath, createRequest)
-//	if err != nil {
-//		return nil, nil, err
-//	}
-//
-//	org := new(Organization)
-//	resp, err := s.client.Do(ctx, req, org)
-//	if err != nil {
-//		return nil, resp, err
-//	}
-//
-//	return org, resp, nil
-//}
-//
-//// Delete removes an organization identified by id.
-//func (s *OrgsService) Delete(ctx context.Context, organizationID string) (*Response, error) {
-//	if organizationID == "" {
-//		return nil, ErrEmptyArgument
-//	}
-//
-//	path := fmt.Sprintf("%v/%v", orgBasePath, organizationID)
-//
-//	req, err := s.client.NewRequest(http.MethodDelete, path, nil)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return s.client.Do(ctx, req, nil)
-//}
+// See: https://docs.snyk.io/snyk-api/reference/organizations-v1
+type OrgsServiceV1API interface {
+	// Create makes a new organization with given payload.
+	//
+	// See: https://docs.snyk.io/snyk-api/reference/organizations-v1#post-org
+	Create(ctx context.Context, createRequest *OrganizationV1CreateRequest) (*OrganizationV1, *Response, error)
+
+	// Delete removes an organization identified by id.
+	//
+	// See: https://docs.snyk.io/snyk-api/reference/organizations-v1#delete-org-orgid
+	Delete(ctx context.Context, orgID string) (*Response, error)
+}
+
+// OrgsServiceV1 handles communication with the org related methods of the Snyk V1 API.
+type OrgsServiceV1 service
+
+var _ OrgsServiceV1API = &OrgsServiceV1{}
+
+// OrganizationV1 represents a Snyk organization for V1 API.
+type OrganizationV1 struct {
+	Group *OrganizationV1Group `json:"group,omitempty"`
+	ID    string               `json:"id,omitempty"`
+	Name  string               `json:"name,omitempty"`
+	Slug  string               `json:"slug,omitempty"`
+	URL   string               `json:"url,omitempty"`
+}
+
+// OrganizationV1Group represents a Snyk group for V1 API.
+type OrganizationV1Group struct {
+	ID   string `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+}
+
+type OrganizationV1CreateRequest struct {
+	Name        string `json:"name,omitempty"`
+	GroupID     string `json:"groupId,omitempty"`
+	SourceOrgID string `json:"sourceOrgId,omitempty"` // id of the organization to copy settings from.
+}
+
+func (o OrganizationV1) String() string { return Stringify(o) }
+
+func (s *OrgsServiceV1) Create(ctx context.Context, createRequest *OrganizationV1CreateRequest) (*OrganizationV1, *Response, error) {
+	if createRequest == nil {
+		return nil, nil, errors.New("failed to create organization: payload must be supplied")
+	}
+
+	req, err := s.client.prepareRequest(ctx, http.MethodPost, s.client.v1BaseURL, orgV1BasePath, createRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	orgV1 := new(OrganizationV1)
+	resp, err := s.client.do(ctx, req, orgV1)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return orgV1, resp, nil
+}
+
+func (s *OrgsServiceV1) Delete(ctx context.Context, orgID string) (*Response, error) {
+	if orgID == "" {
+		return nil, errors.New("failed to delete organization: id must be supplied")
+	}
+
+	path := fmt.Sprintf("%v/%v", orgV1BasePath, orgID)
+
+	req, err := s.client.prepareRequest(ctx, http.MethodDelete, s.client.v1BaseURL, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.client.do(ctx, req, nil)
+}
