@@ -36,6 +36,11 @@ type OrgsServiceAPI interface {
 	//
 	// See: https://docs.snyk.io/snyk-api/reference/orgs#get-orgs-org_id
 	Get(ctx context.Context, orgID string, opts *GetOrganizationOptions) (*Organization, *Response, error)
+
+	// Update changes the details of an organization.
+	//
+	// See: https://docs.snyk.io/snyk-api/reference/orgs#patch-orgs-org_id
+	Update(ctx context.Context, orgID string, updateRequest *OrganizationUpdateRequest) (*Organization, *Response, error)
 }
 
 // OrgsService handles communication with the org related methods of the Snyk API.
@@ -75,6 +80,10 @@ type ListOrganizationOptions struct {
 type GetOrganizationOptions struct {
 	ListOptions
 	Expand string `url:"expand,omitempty"`
+}
+
+type OrganizationUpdateRequest struct {
+	Name string
 }
 
 type orgRoot struct {
@@ -144,6 +153,48 @@ func (s *OrgsService) Get(ctx context.Context, orgID string, opts *GetOrganizati
 	}
 
 	req, err := s.client.prepareRequest(ctx, http.MethodGet, s.client.restBaseURL, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(orgRoot)
+	resp, err := s.client.do(ctx, req, &root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.Organization, resp, nil
+}
+
+func (s *OrgsService) Update(ctx context.Context, orgID string, updateRequest *OrganizationUpdateRequest) (*Organization, *Response, error) {
+	if orgID == "" {
+		return nil, nil, errors.New("failed to update org: id must be supplied")
+	}
+	if updateRequest == nil {
+		return nil, nil, errors.New("failed to update org: payload must be supplied")
+	}
+
+	opts := &ListOptions{BaseOptions: BaseOptions{Version: orgsAPIVersion}}
+	path, err := addOptions(fmt.Sprintf("%v/%v", orgsBasePath, orgID), opts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// inline jsonapi create payload to keep function simple
+	var updateRequestJSON struct {
+		Data struct {
+			Attributes struct {
+				Name string `json:"name"`
+			} `json:"attributes"`
+			ID   string `json:"id"`
+			Type string `json:"type"`
+		} `json:"data"`
+	}
+	updateRequestJSON.Data.Attributes.Name = updateRequest.Name
+	updateRequestJSON.Data.ID = orgID
+	updateRequestJSON.Data.Type = "org"
+
+	req, err := s.client.prepareRequest(ctx, http.MethodPatch, s.client.restBaseURL, path, updateRequestJSON)
 	if err != nil {
 		return nil, nil, err
 	}
