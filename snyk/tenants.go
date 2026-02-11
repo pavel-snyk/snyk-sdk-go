@@ -7,7 +7,7 @@ import "time"
 // See: https://docs.snyk.io/discover-snyk/getting-started/glossary#tenant
 type Tenant struct {
 	ID         string            `json:"id"`                   // The Tenant identifier.
-	Type       string            `json:"type"`                 // The resource type `tenant`.
+	Type       string            `json:"type,omitempty"`       // The resource type `tenant`.
 	Attributes *TenantAttributes `json:"attributes,omitempty"` // The Tenant resource data.
 }
 

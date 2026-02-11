@@ -46,7 +46,7 @@ type OrgsServiceAPI interface {
 // OrgsService handles communication with the org related methods of the Snyk API.
 type OrgsService service
 
-var _ OrgsServiceAPI = &OrgsService{}
+var _ OrgsServiceAPI = (*OrgsService)(nil)
 
 // Organization represents a Snyk organization.
 //
