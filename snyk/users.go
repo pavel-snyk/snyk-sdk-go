@@ -1,61 +1,69 @@
 package snyk
 
+import (
+	"context"
+	"net/http"
+)
+
+const (
+	usersAPIVersion = "2025-11-05"
+)
+
+// UsersServiceAPI is an interface for interacting with the users endpoints of the Snyk API.
 //
-//import (
-//	"context"
-//	"fmt"
-//	"net/http"
-//)
+// See: https://docs.snyk.io/snyk-api/reference/users
+type UsersServiceAPI interface {
+	// GetSelf provides the details about the user making the request.
+	//
+	// See: https://docs.snyk.io/snyk-api/reference/users#get-self
+	GetSelf(ctx context.Context) (*User, *Response, error)
+}
+
+// UsersService handles communication with the user related methods of the Snyk API.
+type UsersService service
+
+var _ UsersServiceAPI = (*UsersService)(nil)
+
+// User represents a Snyk user.
 //
-//const userBasePath = "user"
-//
-//// UsersService handles communication with the user related methods of the Snyk API.
-//type UsersService service
-//
-//// User represents a Snyk user.
-//type User struct {
-//	Email         string         `json:"email,omitempty"`
-//	ID            string         `json:"id,omitempty"`
-//	Name          string         `json:"name,omitempty"`
-//	Username      string         `json:"username,omitempty"`
-//	Organizations []Organization `json:"orgs,omitempty"`
-//}
-//
-//// GetCurrent retrieves information about the user making the request.
-////
-//// Note: the retrieved user will include information about organizations
-//// that the user belongs to.
-//func (s *UsersService) GetCurrent(ctx context.Context) (*User, *Response, error) {
-//	path := fmt.Sprintf("%s/me", userBasePath)
-//
-//	req, err := s.client.NewRequest(http.MethodGet, path, nil)
-//	if err != nil {
-//		return nil, nil, err
-//	}
-//
-//	user := new(User)
-//	resp, err := s.client.Do(ctx, req, user)
-//	if err != nil {
-//		return nil, resp, err
-//	}
-//
-//	return user, resp, nil
-//}
-//
-//// Get retrieves information about a user identified by id.
-//func (s *UsersService) Get(ctx context.Context, userID string) (*User, *Response, error) {
-//	path := fmt.Sprintf("%s/%s", userBasePath, userID)
-//
-//	req, err := s.client.NewRequest(http.MethodGet, path, nil)
-//	if err != nil {
-//		return nil, nil, err
-//	}
-//
-//	user := new(User)
-//	resp, err := s.client.Do(ctx, req, user)
-//	if err != nil {
-//		return nil, resp, err
-//	}
-//
-//	return user, resp, nil
-//}
+// See: https://docs.snyk.io/snyk-platform-administration/groups-and-organizations#snyk-features-for-user-management
+type User struct {
+	ID         string          `json:"id"`                   // The User identifier.
+	Type       string          `json:"type"`                 // The resource type `user`.
+	Attributes *UserAttributes `json:"attributes,omitempty"` // The User resource data.
+}
+
+type UserAttributes struct {
+	DefaultOrgID string `json:"default_org_context,omitempty"` // The ID of the default Organization for the User.
+	Email        string `json:"email,omitempty"`               // The email of the User.
+	Name         string `json:"name"`                          // The name of the User.
+	Username     string `json:"username,omitempty"`            // The username of the User.
+}
+
+type userRoot struct {
+	User *User `json:"data,omitempty"`
+}
+
+func (u User) String() string { return Stringify(u) }
+
+func (s *UsersService) GetSelf(ctx context.Context) (*User, *Response, error) {
+	opts := &BaseOptions{Version: usersAPIVersion}
+
+	path, err := addOptions("self", opts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.prepareRequest(ctx, http.MethodGet, s.client.restBaseURL, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(userRoot)
+	resp, err := s.client.do(ctx, req, &root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.User, resp, nil
+}

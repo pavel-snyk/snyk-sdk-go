@@ -17,6 +17,9 @@ const (
 //
 // See: https://docs.snyk.io/snyk-api/reference/groups
 type GroupsServiceAPI interface {
+	// Get provides the full details of an group.
+	//
+	// See: https://docs.snyk.io/snyk-api/reference/group#get-groups-group_id
 	Get(ctx context.Context, groupID string) (*Group, *Response, error)
 }
 
