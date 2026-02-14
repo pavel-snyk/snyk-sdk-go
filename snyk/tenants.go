@@ -2,6 +2,10 @@ package snyk
 
 import "time"
 
+const (
+	tenantsBasePath = "tenants"
+)
+
 // Tenant represents a Snyk Tenant.
 //
 // See: https://docs.snyk.io/discover-snyk/getting-started/glossary#tenant

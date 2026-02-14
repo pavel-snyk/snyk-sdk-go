@@ -18,7 +18,7 @@ const (
 //
 // See: https://docs.snyk.io/snyk-api/reference/orgs
 type OrgsServiceAPI interface {
-	// ListAccessibleOrgs get a paginated list of organizations you have access to. If ListOrganizationOptions is nil,
+	// ListAccessibleOrgs gets a paginated list of organizations you have access to. If ListOrganizationOptions is nil,
 	// then relationship for MemberRole will be always expanded.
 	//
 	// See: https://docs.snyk.io/snyk-api/reference/orgs#get-orgs
