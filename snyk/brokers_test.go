@@ -226,3 +226,358 @@ func TestBrokers_DeleteDeployment_emptyDeploymentID(t *testing.T) {
 	assert.Error(t, err)
 	assert.ErrorContains(t, err, "id must be supplied")
 }
+
+func TestBrokers_ListDeploymentCredentials(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/credentials", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		_, _ = fmt.Fprint(w, `
+{
+  "jsonapi": { "version": "1.0" },
+  "data": [
+    {
+      "id": "7fba7667-2ca3-4534-ab3f-bd1b61b0bd7b",
+      "type": "deployment_credential",
+      "attributes": {
+        "comment": "test comment for gitlab",
+        "deployment_id": "1793ad4f-f506-45a7-8c8c-d14f25fff941",
+        "environment_variable_name": "MY_GITLAB_TEST_TOKEN",
+        "type": "gitlab"
+      }
+    },
+    {
+      "id": "354e0e11-d3c8-405d-8fec-33683276a98b",
+      "type": "deployment_credential",
+      "attributes": {
+        "comment": "test comment for github",
+        "deployment_id": "1793ad4f-f506-45a7-8c8c-d14f25fff941",
+        "environment_variable_name": "MY_GITHUB_TEST_TOKEN",
+        "type": "github"
+      }
+    }
+  ],
+  "links": {}
+}
+`)
+	})
+	expectedDeploymentCredentials := []BrokerDeploymentCredential{
+		{
+			ID:   "7fba7667-2ca3-4534-ab3f-bd1b61b0bd7b",
+			Type: "deployment_credential",
+			Attributes: &BrokerDeploymentCredentialAttributes{
+				Comment:            "test comment for gitlab",
+				BrokerDeploymentID: "1793ad4f-f506-45a7-8c8c-d14f25fff941",
+				EnvVarName:         "MY_GITLAB_TEST_TOKEN",
+				Type:               "gitlab",
+			},
+		},
+		{
+			ID:   "354e0e11-d3c8-405d-8fec-33683276a98b",
+			Type: "deployment_credential",
+			Attributes: &BrokerDeploymentCredentialAttributes{
+				Comment:            "test comment for github",
+				BrokerDeploymentID: "1793ad4f-f506-45a7-8c8c-d14f25fff941",
+				EnvVarName:         "MY_GITHUB_TEST_TOKEN",
+				Type:               "github",
+			},
+		},
+	}
+
+	actualDeploymentCredentials, _, err := client.Brokers.ListDeploymentCredentials(ctx, "tenant-id", "install-id", "deployment-id")
+
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(actualDeploymentCredentials), "expect 2 deployment credentials")
+	assert.Equal(t, expectedDeploymentCredentials, actualDeploymentCredentials)
+}
+
+func TestBrokers_ListDeploymentCredentials_emptyTenantID(t *testing.T) {
+	_, _, err := client.Brokers.ListDeploymentCredentials(ctx, "", "install-id", "deployment-id")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "tenant id must be supplied")
+}
+
+func TestBrokers_ListDeploymentCredentials_emptyAppInstallID(t *testing.T) {
+	_, _, err := client.Brokers.ListDeploymentCredentials(ctx, "tenant-id", "", "deployment-id")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "app install id must be supplied")
+}
+
+func TestBrokers_ListDeploymentCredentials_emptyDeploymentID(t *testing.T) {
+	_, _, err := client.Brokers.ListDeploymentCredentials(ctx, "tenant-id", "install-id", "")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "deployment id must be supplied")
+}
+
+func TestBrokers_GetDeploymentCredential(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/credentials/credential-id", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		_, _ = fmt.Fprint(w, `
+{
+  "jsonapi": { "version": "1.0" },
+  "data": {
+    "id": "7fba7667-2ca3-4534-ab3f-bd1b61b0bd7b",
+    "type": "deployment_credential",
+    "attributes": {
+      "comment": "test comment for gitlab",
+      "deployment_id": "1793ad4f-f506-45a7-8c8c-d14f25fff941",
+      "environment_variable_name": "MY_GITLAB_TEST_TOKEN",
+      "type": "gitlab"
+    },
+    "relationships": {
+      "broker_connections": []
+    }
+  },
+  "links": {}
+}
+`)
+	})
+	expectedDeploymentCredential := &BrokerDeploymentCredential{
+		ID:   "7fba7667-2ca3-4534-ab3f-bd1b61b0bd7b",
+		Type: "deployment_credential",
+		Attributes: &BrokerDeploymentCredentialAttributes{
+			Comment:            "test comment for gitlab",
+			BrokerDeploymentID: "1793ad4f-f506-45a7-8c8c-d14f25fff941",
+			EnvVarName:         "MY_GITLAB_TEST_TOKEN",
+			Type:               "gitlab",
+		},
+	}
+
+	actualDeploymentCredential, _, err := client.Brokers.GetDeploymentCredential(ctx, "tenant-id", "install-id", "deployment-id", "credential-id")
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedDeploymentCredential, actualDeploymentCredential)
+}
+
+func TestBrokers_GetDeploymentCredential_emptyTenantID(t *testing.T) {
+	_, _, err := client.Brokers.GetDeploymentCredential(ctx, "", "install-id", "deployment-id", "credential-id")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "tenant id must be supplied")
+}
+
+func TestBrokers_GetDeploymentCredential_emptyAppInstallID(t *testing.T) {
+	_, _, err := client.Brokers.GetDeploymentCredential(ctx, "tenant-id", "", "deployment-id", "credential-id")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "app install id must be supplied")
+}
+
+func TestBrokers_GetDeploymentCredential_emptyDeploymentID(t *testing.T) {
+	_, _, err := client.Brokers.GetDeploymentCredential(ctx, "tenant-id", "install-id", "", "credential-id")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "deployment id must be supplied")
+}
+
+func TestBrokers_GetDeploymentCredential_emptyCredentialID(t *testing.T) {
+	_, _, err := client.Brokers.GetDeploymentCredential(ctx, "tenant-id", "install-id", "deployment-id", "")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "credential id must be supplied")
+}
+
+func TestBrokers_CreateDeploymentCredential(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/credentials", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		_, _ = fmt.Fprint(w, `
+{
+  "jsonapi": { "version": "1.0" },
+  "data": [
+    {
+      "id": "7fba7667-2ca3-4534-ab3f-bd1b61b0bd7b",
+      "type": "deployment_credential",
+      "attributes": {
+        "comment": "test comment for gitlab",
+        "deployment_id": "1793ad4f-f506-45a7-8c8c-d14f25fff941",
+        "environment_variable_name": "MY_GITLAB_TEST_TOKEN",
+        "type": "gitlab"
+      }
+    }
+  ],
+  "links": {}
+}
+`)
+	})
+	expectedDeploymentCredential := &BrokerDeploymentCredential{
+		ID:   "7fba7667-2ca3-4534-ab3f-bd1b61b0bd7b",
+		Type: "deployment_credential",
+		Attributes: &BrokerDeploymentCredentialAttributes{
+			Comment:            "test comment for gitlab",
+			BrokerDeploymentID: "1793ad4f-f506-45a7-8c8c-d14f25fff941",
+			EnvVarName:         "MY_GITLAB_TEST_TOKEN",
+			Type:               "gitlab",
+		},
+	}
+
+	actualDeploymentCredential, _, err := client.Brokers.CreateDeploymentCredential(ctx, "tenant-id", "install-id", "deployment-id",
+		&BrokerDeploymentCredentialCreateOrUpdateRequest{
+			Comment:    "test comment for gitlab",
+			EnvVarName: "MY_GITLAB_TEST_TOKEN",
+			Type:       "gitlab",
+		},
+	)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedDeploymentCredential, actualDeploymentCredential)
+}
+
+func TestBrokers_CreateDeploymentCredential_emptyTenantID(t *testing.T) {
+	_, _, err := client.Brokers.CreateDeploymentCredential(ctx, "", "install-id", "deployment-id", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "tenant id must be supplied")
+}
+
+func TestBrokers_CreateDeploymentCredential_emptyAppInstallID(t *testing.T) {
+	_, _, err := client.Brokers.CreateDeploymentCredential(ctx, "tenant-id", "", "deployment-id", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "app install id must be supplied")
+}
+
+func TestBrokers_CreateDeploymentCredential_emptyDeploymentID(t *testing.T) {
+	_, _, err := client.Brokers.CreateDeploymentCredential(ctx, "tenant-id", "install-id", "", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "deployment id must be supplied")
+}
+
+func TestBrokers_CreateDeploymentCredential_emptyPayload(t *testing.T) {
+	_, _, err := client.Brokers.CreateDeploymentCredential(ctx, "tenant-id", "install-id", "deployment-id", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "payload must be supplied")
+}
+
+func TestBrokers_UpdateDeploymentCredential(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/credentials/credential-id", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPatch, r.Method)
+		_, _ = fmt.Fprint(w, `
+{
+  "jsonapi": { "version": "1.0" },
+  "data": {
+    "id": "7fba7667-2ca3-4534-ab3f-bd1b61b0bd7b",
+    "type": "deployment_credential",
+    "attributes": {
+      "comment": "test comment for gitlab (updated)",
+      "deployment_id": "1793ad4f-f506-45a7-8c8c-d14f25fff941",
+      "environment_variable_name": "MY_GITLAB_TEST_TOKEN_UPDATED",
+      "type": "gitlab"
+    }
+  },
+  "links": {}
+}
+`)
+	})
+	expectedDeploymentCredential := &BrokerDeploymentCredential{
+		ID:   "7fba7667-2ca3-4534-ab3f-bd1b61b0bd7b",
+		Type: "deployment_credential",
+		Attributes: &BrokerDeploymentCredentialAttributes{
+			Comment:            "test comment for gitlab (updated)",
+			BrokerDeploymentID: "1793ad4f-f506-45a7-8c8c-d14f25fff941",
+			EnvVarName:         "MY_GITLAB_TEST_TOKEN_UPDATED",
+			Type:               "gitlab",
+		},
+	}
+
+	actualDeploymentCredential, _, err := client.Brokers.UpdateDeploymentCredential(ctx, "tenant-id", "install-id", "deployment-id", "credential-id",
+		&BrokerDeploymentCredentialCreateOrUpdateRequest{
+			Comment:    "test comment for gitlab (updated)",
+			EnvVarName: "MY_GITLAB_TEST_TOKEN_UPDATED",
+			Type:       "gitlab",
+		},
+	)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedDeploymentCredential, actualDeploymentCredential)
+}
+
+func TestBrokers_UpdateDeploymentCredential_emptyTenantID(t *testing.T) {
+	_, _, err := client.Brokers.UpdateDeploymentCredential(ctx, "", "install-id", "deployment-id", "credential-id", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "tenant id must be supplied")
+}
+
+func TestBrokers_UpdateDeploymentCredential_emptyAppInstallID(t *testing.T) {
+	_, _, err := client.Brokers.UpdateDeploymentCredential(ctx, "tenant-id", "", "deployment-id", "credential-id", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "app install id must be supplied")
+}
+
+func TestBrokers_UpdateDeploymentCredential_emptyDeploymentID(t *testing.T) {
+	_, _, err := client.Brokers.UpdateDeploymentCredential(ctx, "tenant-id", "install-id", "", "credential-id", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "deployment id must be supplied")
+}
+
+func TestBrokers_UpdateDeploymentCredential_emptyCredentialID(t *testing.T) {
+	_, _, err := client.Brokers.UpdateDeploymentCredential(ctx, "tenant-id", "install-id", "deployment-id", "", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "credential id must be supplied")
+}
+
+func TestBrokers_UpdateDeploymentCredential_emptyPayload(t *testing.T) {
+	_, _, err := client.Brokers.UpdateDeploymentCredential(ctx, "tenant-id", "install-id", "deployment-id", "credential-id", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "payload must be supplied")
+}
+
+func TestBrokers_DeleteDeploymentCredential(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/credentials/credential-id", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodDelete, r.Method)
+	})
+
+	_, err := client.Brokers.DeleteDeploymentCredential(ctx, "tenant-id", "install-id", "deployment-id", "credential-id")
+
+	assert.NoError(t, err)
+}
+
+func TestBrokers_DeleteDeploymentCredential_emptyTenantID(t *testing.T) {
+	_, err := client.Brokers.DeleteDeploymentCredential(ctx, "", "install-id", "deployment-id", "credential-id")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "tenant id must be supplied")
+}
+
+func TestBrokers_DeleteDeploymentCredential_emptyAppInstallID(t *testing.T) {
+	_, err := client.Brokers.DeleteDeploymentCredential(ctx, "tenant-id", "", "deployment-id", "credential-id")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "app install id must be supplied")
+}
+
+func TestBrokers_DeleteDeploymentCredential_emptyDeploymentID(t *testing.T) {
+	_, err := client.Brokers.DeleteDeploymentCredential(ctx, "tenant-id", "install-id", "", "credential-id")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "deployment id must be supplied")
+}
+
+func TestBrokers_DeleteDeploymentCredential_emptyCredentialID(t *testing.T) {
+	_, err := client.Brokers.DeleteDeploymentCredential(ctx, "tenant-id", "install-id", "deployment-id", "")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "credential id must be supplied")
+}
