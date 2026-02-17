@@ -14,7 +14,7 @@ const (
 
 // BrokersServiceAPI is an interface for interacting with the brokers endpoints of the Snyk API.
 //
-// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-installs-install_id-deployments
+// See: https://docs.snyk.io/snyk-api/reference/universal-broker
 type BrokersServiceAPI interface {
 	// ListDeployments provides a list of broker deployments.
 	//
@@ -84,7 +84,7 @@ type BrokerDeploymentAttributes struct {
 }
 
 type BrokerDeploymentCreateOrUpdateRequest struct {
-	OrgID    string //The ID of the organization containing the Universal Broker Snyk AppInstall.
+	OrgID    string // The ID of the organization containing the Universal Broker Snyk AppInstall.
 	Metadata map[string]string
 }
 
