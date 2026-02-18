@@ -581,3 +581,359 @@ func TestBrokers_DeleteDeploymentCredential_emptyCredentialID(t *testing.T) {
 	assert.Error(t, err)
 	assert.ErrorContains(t, err, "credential id must be supplied")
 }
+
+func TestBrokers_ListConnections(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/connections", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		_, _ = fmt.Fprint(w, `
+{
+  "jsonapi": { "version": "1.0" },
+  "data": [
+    {
+      "id": "a9d79dc9-63c5-4b5d-ae5c-5c42bc2f3d38",
+      "type": "broker_connection",
+      "attributes": {
+        "deployment_id": "1793ad4f-f506-45a7-8c8c-d14f25fff941",
+        "identifier": "9dd6c62e-6541-4ff5-8e2c-e69e5183f2cc",
+        "name": "test-github-connection",
+        "configuration": {
+          "required": {
+            "github_token": "${MY_GITHUB_TEST_TOKEN}"
+          },
+          "type": "github"
+        }
+      }
+    }
+  ],
+  "links": {}
+}
+`)
+	})
+	expectedConnections := []BrokerConnection{
+		{
+			ID:   "a9d79dc9-63c5-4b5d-ae5c-5c42bc2f3d38",
+			Type: "broker_connection",
+			Attributes: &BrokerConnectionAttributes{
+				BrokerDeploymentID: "1793ad4f-f506-45a7-8c8c-d14f25fff941",
+				Configuration: &BrokerConnectionAttributesConfiguration{
+					GitHub: &BrokerConnectionGitHubConfiguration{GitHubToken: "${MY_GITHUB_TEST_TOKEN}"},
+					Type:   "github",
+				},
+				Identifier: "9dd6c62e-6541-4ff5-8e2c-e69e5183f2cc",
+				Name:       "test-github-connection",
+			},
+		},
+	}
+
+	actualConnections, _, err := client.Brokers.ListConnections(ctx, "tenant-id", "install-id", "deployment-id")
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(actualConnections), "expect 1 broker connection")
+	assert.Equal(t, expectedConnections, actualConnections)
+}
+
+func TestBrokers_ListConnections_emptyTenantID(t *testing.T) {
+	_, _, err := client.Brokers.ListConnections(ctx, "", "install-id", "deployment-id")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "tenant id must be supplied")
+}
+
+func TestBrokers_ListConnections_emptyAppInstallID(t *testing.T) {
+	_, _, err := client.Brokers.ListConnections(ctx, "tenant-id", "", "deployment-id")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "app install id must be supplied")
+}
+
+func TestBrokers_ListConnections_emptyDeploymentID(t *testing.T) {
+	_, _, err := client.Brokers.ListConnections(ctx, "tenant-id", "install-id", "")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "deployment id must be supplied")
+}
+
+func TestBrokers_GetConnection(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/connections/connection-id", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		_, _ = fmt.Fprint(w, `
+{
+  "jsonapi": { "version": "1.0" },
+  "data": {
+    "id": "a9d79dc9-63c5-4b5d-ae5c-5c42bc2f3d38",
+    "type": "broker_connection",
+    "attributes": {
+      "deployment_id": "1793ad4f-f506-45a7-8c8c-d14f25fff941",
+      "identifier": "9dd6c62e-6541-4ff5-8e2c-e69e5183f2cc",
+      "name": "test-github-connection",
+      "configuration": {
+        "required": { "github_token": "${MY_GITHUB_TEST_TOKEN}" },
+        "type": "github"
+      }
+    }
+  },
+  "links": {}
+}
+`)
+	})
+	expectedConnection := &BrokerConnection{
+		ID:   "a9d79dc9-63c5-4b5d-ae5c-5c42bc2f3d38",
+		Type: "broker_connection",
+		Attributes: &BrokerConnectionAttributes{
+			BrokerDeploymentID: "1793ad4f-f506-45a7-8c8c-d14f25fff941",
+			Configuration: &BrokerConnectionAttributesConfiguration{
+				GitHub: &BrokerConnectionGitHubConfiguration{GitHubToken: "${MY_GITHUB_TEST_TOKEN}"},
+				Type:   "github",
+			},
+			Identifier: "9dd6c62e-6541-4ff5-8e2c-e69e5183f2cc",
+			Name:       "test-github-connection",
+		},
+	}
+
+	actualConnection, _, err := client.Brokers.GetConnection(ctx, "tenant-id", "install-id", "deployment-id", "connection-id")
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedConnection, actualConnection)
+}
+
+func TestBrokers_GetConnection_emptyTenantID(t *testing.T) {
+	_, _, err := client.Brokers.GetConnection(ctx, "", "install-id", "deployment-id", "connection-id")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "tenant id must be supplied")
+}
+
+func TestBrokers_GetConnection_emptyAppInstallID(t *testing.T) {
+	_, _, err := client.Brokers.GetConnection(ctx, "tenant-id", "", "deployment-id", "connection-id")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "app install id must be supplied")
+}
+
+func TestBrokers_GetConnection_emptyDeploymentID(t *testing.T) {
+	_, _, err := client.Brokers.GetConnection(ctx, "tenant-id", "install-id", "", "connection-id")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "deployment id must be supplied")
+}
+
+func TestBrokers_GetConnection_emptyConnectionID(t *testing.T) {
+	_, _, err := client.Brokers.GetConnection(ctx, "tenant-id", "install-id", "deployment-id", "")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "connection id must be supplied")
+}
+
+func TestBrokers_CreateConnection(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/connections", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		_, _ = fmt.Fprint(w, `
+{
+  "jsonapi": { "version": "1.0" },
+  "data": {
+    "id": "a9d79dc9-63c5-4b5d-ae5c-5c42bc2f3d38",
+    "type": "broker_connection",
+    "attributes": {
+      "deployment_id": "1793ad4f-f506-45a7-8c8c-d14f25fff941",
+      "identifier": "9dd6c62e-6541-4ff5-8e2c-e69e5183f2cc",
+      "name": "test-github-connection",
+      "configuration": {
+        "required": { "github_token": "${MY_GITHUB_TEST_TOKEN}" },
+        "type": "github"
+      }
+    }
+  },
+  "links": {}
+}
+`)
+	})
+	expectedConnection := &BrokerConnection{
+		ID:   "a9d79dc9-63c5-4b5d-ae5c-5c42bc2f3d38",
+		Type: "broker_connection",
+		Attributes: &BrokerConnectionAttributes{
+			BrokerDeploymentID: "1793ad4f-f506-45a7-8c8c-d14f25fff941",
+			Configuration: &BrokerConnectionAttributesConfiguration{
+				GitHub: &BrokerConnectionGitHubConfiguration{GitHubToken: "${MY_GITHUB_TEST_TOKEN}"},
+				Type:   "github",
+			},
+			Identifier: "9dd6c62e-6541-4ff5-8e2c-e69e5183f2cc",
+			Name:       "test-github-connection",
+		},
+	}
+
+	actualConnection, _, err := client.Brokers.CreateConnection(
+		ctx, "tenant-id", "install-id", "deployment-id",
+		&BrokerConnectionCreateOrUpdateRequest{
+			GitHubToken: "1a519722-816d-4fdf-b501-2528e91bcda4",
+			Type:        BrokerConnectionTypeGitHub,
+		},
+	)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedConnection, actualConnection)
+}
+
+func TestBrokers_CreateConnection_emptyTenantID(t *testing.T) {
+	_, _, err := client.Brokers.CreateConnection(ctx, "", "install-id", "deployment-id", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "tenant id must be supplied")
+}
+
+func TestBrokers_CreateConnection_emptyAppInstallID(t *testing.T) {
+	_, _, err := client.Brokers.CreateConnection(ctx, "tenant-id", "", "deployment-id", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "app install id must be supplied")
+}
+
+func TestBrokers_CreateConnection_emptyDeploymentID(t *testing.T) {
+	_, _, err := client.Brokers.CreateConnection(ctx, "tenant-id", "install-id", "", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "deployment id must be supplied")
+}
+
+func TestBrokers_CreateConnection_emptyPayload(t *testing.T) {
+	_, _, err := client.Brokers.CreateConnection(ctx, "tenant-id", "install-id", "deployment-id", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "payload must be supplied")
+}
+
+func TestBrokers_UpdateConnection(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/connections/connection-id", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPatch, r.Method)
+		_, _ = fmt.Fprint(w, `
+{
+  "jsonapi": { "version": "1.0" },
+  "data": {
+    "id": "a9d79dc9-63c5-4b5d-ae5c-5c42bc2f3d38",
+    "type": "broker_connection",
+    "attributes": {
+      "deployment_id": "1793ad4f-f506-45a7-8c8c-d14f25fff941",
+      "identifier": "9dd6c62e-6541-4ff5-8e2c-e69e5183f2cc",
+      "name": "test-github-connection-updated",
+      "configuration": {
+        "required": { "github_token": "${MY_GITHUB_TEST_TOKEN}" },
+        "type": "github"
+      }
+    }
+  },
+  "links": {}
+}
+`)
+	})
+	expectedConnection := &BrokerConnection{
+		ID:   "a9d79dc9-63c5-4b5d-ae5c-5c42bc2f3d38",
+		Type: "broker_connection",
+		Attributes: &BrokerConnectionAttributes{
+			BrokerDeploymentID: "1793ad4f-f506-45a7-8c8c-d14f25fff941",
+			Configuration: &BrokerConnectionAttributesConfiguration{
+				GitHub: &BrokerConnectionGitHubConfiguration{GitHubToken: "${MY_GITHUB_TEST_TOKEN}"},
+				Type:   "github",
+			},
+			Identifier: "9dd6c62e-6541-4ff5-8e2c-e69e5183f2cc",
+			Name:       "test-github-connection-updated",
+		},
+	}
+
+	actualConnection, _, err := client.Brokers.UpdateConnection(
+		ctx, "tenant-id", "install-id", "deployment-id", "connection-id",
+		&BrokerConnectionCreateOrUpdateRequest{
+			GitHubToken: "1a519722-816d-4fdf-b501-2528e91bcda4",
+			Type:        BrokerConnectionTypeGitHub,
+		},
+	)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedConnection, actualConnection)
+}
+
+func TestBrokers_UpdateConnection_emptyTenantID(t *testing.T) {
+	_, _, err := client.Brokers.UpdateConnection(ctx, "", "install-id", "deployment-id", "connection-id", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "tenant id must be supplied")
+}
+
+func TestBrokers_UpdateConnection_emptyAppInstallID(t *testing.T) {
+	_, _, err := client.Brokers.UpdateConnection(ctx, "tenant-id", "", "deployment-id", "connection-id", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "app install id must be supplied")
+}
+
+func TestBrokers_UpdateConnection_emptyDeploymentID(t *testing.T) {
+	_, _, err := client.Brokers.UpdateConnection(ctx, "tenant-id", "install-id", "", "connection-id", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "deployment id must be supplied")
+}
+
+func TestBrokers_UpdateConnection_emptyConnectionID(t *testing.T) {
+	_, _, err := client.Brokers.UpdateConnection(ctx, "tenant-id", "install-id", "deployment-id", "", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "connection id must be supplied")
+}
+
+func TestBrokers_UpdateConnection_emptyPayload(t *testing.T) {
+	_, _, err := client.Brokers.UpdateConnection(ctx, "tenant-id", "install-id", "deployment-id", "connection-id", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "payload must be supplied")
+}
+
+func TestBrokers_DeleteConnection(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/connections/connection-id", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodDelete, r.Method)
+	})
+
+	_, err := client.Brokers.DeleteConnection(ctx, "tenant-id", "install-id", "deployment-id", "connection-id")
+
+	assert.NoError(t, err)
+}
+
+func TestBrokers_DeleteConnection_emptyTenantID(t *testing.T) {
+	_, err := client.Brokers.DeleteConnection(ctx, "", "install-id", "deployment-id", "connection-id")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "tenant id must be supplied")
+}
+
+func TestBrokers_DeleteConnection_emptyAppInstallID(t *testing.T) {
+	_, err := client.Brokers.DeleteConnection(ctx, "tenant-id", "", "deployment-id", "connection-id")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "app install id must be supplied")
+}
+
+func TestBrokers_DeleteConnection_emptyDeploymentID(t *testing.T) {
+	_, err := client.Brokers.DeleteConnection(ctx, "tenant-id", "install-id", "", "connection-id")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "deployment id must be supplied")
+}
+
+func TestBrokers_DeleteConnection_emptyConnectionID(t *testing.T) {
+	_, err := client.Brokers.DeleteConnection(ctx, "tenant-id", "install-id", "deployment-id", "")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "connection id must be supplied")
+}

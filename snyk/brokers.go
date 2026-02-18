@@ -2,14 +2,19 @@ package snyk
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 )
 
 const (
-	brokersBasePath   = "brokers"
-	brokersAPIVersion = "2025-11-05"
+	brokersBasePath           = "brokers"
+	brokerDeploymentsBasePath = tenantsBasePath + "/%v/brokers/installs/%v/deployments"
+	brokerDeploymentBasePath  = brokerDeploymentsBasePath + "/%v"
+	brokerConnectionsBasePath = brokerDeploymentBasePath + "/connections"
+	brokerConnectionBasePath  = brokerConnectionsBasePath + "/%v"
+	brokersAPIVersion         = "2025-11-05"
 )
 
 // BrokersServiceAPI is an interface for interacting with the brokers endpoints of the Snyk API.
@@ -61,6 +66,31 @@ type BrokersServiceAPI interface {
 	//
 	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#delete-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-credentials-credentia
 	DeleteDeploymentCredential(ctx context.Context, tenantID, appInstallID, deploymentID, credentialID string) (*Response, error)
+
+	// ListConnections provides a list of broker connections for a given deployment.
+	//
+	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-connections
+	ListConnections(ctx context.Context, tenantID, appInstallID, deploymentID string) ([]BrokerConnection, *Response, error)
+
+	// GetConnection provides the full details of a broker connection for a given deployment.
+	//
+	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-connections-connection_i
+	GetConnection(ctx context.Context, tenantID, appInstallID, deploymentID, connectionID string) (*BrokerConnection, *Response, error)
+
+	// CreateConnection
+	//
+	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#post-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-connections
+	CreateConnection(ctx context.Context, tenantID, appInstallID, deploymentID string, createRequest *BrokerConnectionCreateOrUpdateRequest) (*BrokerConnection, *Response, error)
+
+	// UpdateConnection
+	//
+	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#patch-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-connections-connection
+	UpdateConnection(ctx context.Context, tenantID, appInstallID, deploymentID, connectionID string, updateRequest *BrokerConnectionCreateOrUpdateRequest) (*BrokerConnection, *Response, error)
+
+	// DeleteConnection
+	//
+	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#delete-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-connections-connectio
+	DeleteConnection(ctx context.Context, tenantID, appInstallID, deploymentID, connectionID string) (*Response, error)
 }
 
 // BrokersService handles communication with the broker related methods of the Snyk API.
@@ -500,4 +530,352 @@ func (s *BrokersService) DeleteDeploymentCredential(ctx context.Context, tenantI
 	}
 
 	return s.client.do(ctx, req, nil)
+}
+
+// BrokerConnection represents a Snyk broker connection.
+//
+// See: https://docs.snyk.io/implementation-and-setup/enterprise-setup/snyk-broker/universal-broker/setting-up-and-integrating-your-universal-broker-connections#create-deployments-and-connections
+type BrokerConnection struct {
+	ID         string                      `json:"id"`                   // The BrokerConnection identifier.
+	Type       string                      `json:"type"`                 // The resource type `broker_connection`.
+	Attributes *BrokerConnectionAttributes `json:"attributes,omitempty"` // The BrokerConnection resource data.
+}
+
+type BrokerConnectionAttributes struct {
+	BrokerDeploymentID string                                   `json:"deployment_id,omitempty"` // The ID of the associated BrokerDeployment.
+	Identifier         string                                   `json:"identifier"`              // The BrokerConnection identifier (known as broker token in Classic Broker).
+	Name               string                                   `json:"name,omitempty"`          // The name of the BrokerConnection.
+	Configuration      *BrokerConnectionAttributesConfiguration `json:"configuration"`           // The configuration of the BrokerConnection.
+}
+
+// BrokerConnectionType represents the type of BrokerConnection.
+type BrokerConnectionType string
+
+const (
+	BrokerConnectionTypeArtifactory BrokerConnectionType = "artifactory"
+	BrokerConnectionTypeGitLab      BrokerConnectionType = "gitlab"
+	BrokerConnectionTypeGitHub      BrokerConnectionType = "github"
+)
+
+type BrokerConnectionAttributesConfiguration struct {
+	Type        BrokerConnectionType `json:"type"` // The type of the BrokerConnection, e.g. 'gitlab' or 'github'.
+	Artifactory *BrokerConnectionArtifactoryConfiguration
+	GitHub      *BrokerConnectionGitHubConfiguration
+	GitLab      *BrokerConnectionGitLabConfiguration
+}
+
+type BrokerConnectionArtifactoryConfiguration struct {
+	ArtifactoryURL string `json:"artifactory_url"`
+}
+
+type BrokerConnectionCreateOrUpdateRequest struct {
+	ArtifactoryURL string
+	GitHubToken    string
+	GitLabHostname string
+	GitLabToken    string
+	Name           string
+	Type           BrokerConnectionType
+}
+
+type BrokerConnectionGitHubConfiguration struct {
+	BrokerClientURL string `json:"broker_client_url"`
+	GitHubToken     string `json:"github_token"`
+}
+
+type BrokerConnectionGitLabConfiguration struct {
+	BrokerClientURL string `json:"broker_client_url"`
+	GitLabHostname  string `json:"gitlab"`
+	GitLabToken     string `json:"gitlab_token"`
+}
+
+// UnmarshalJSON is a custom unmarshaller that handles the discriminator logic for BrokerConnectionAttributesConfiguration.
+// It inspects the "type" field and unmarshals the "required" data into the corresponding typed struct.
+func (c *BrokerConnectionAttributesConfiguration) UnmarshalJSON(data []byte) error {
+	var raw struct {
+		Type     BrokerConnectionType `json:"type"`
+		Required json.RawMessage      `json:"required"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	c.Type = raw.Type
+
+	switch c.Type {
+	case BrokerConnectionTypeArtifactory:
+		var artifactoryConfig BrokerConnectionArtifactoryConfiguration
+		if err := json.Unmarshal(raw.Required, &artifactoryConfig); err != nil {
+			return err
+		}
+		c.Artifactory = &artifactoryConfig
+	case BrokerConnectionTypeGitHub:
+		var githubConfig BrokerConnectionGitHubConfiguration
+		if err := json.Unmarshal(raw.Required, &githubConfig); err != nil {
+			return err
+		}
+		c.GitHub = &githubConfig
+	case BrokerConnectionTypeGitLab:
+		var gitlabConfig BrokerConnectionGitLabConfiguration
+		if err := json.Unmarshal(raw.Required, &gitlabConfig); err != nil {
+			return err
+		}
+		c.GitLab = &gitlabConfig
+	}
+
+	return nil
+}
+
+type brokerConnectionRoot struct {
+	BrokerConnection *BrokerConnection `json:"data"`
+}
+
+type brokerConnectionsRoot struct {
+	BrokerConnections []BrokerConnection `json:"data"`
+	Links             *PaginatedLinks    `json:"links,omitempty"`
+}
+
+func (c BrokerConnection) String() string { return Stringify(c) }
+
+func (s *BrokersService) ListConnections(ctx context.Context, tenantID, appInstallID, deploymentID string) ([]BrokerConnection, *Response, error) {
+	if tenantID == "" {
+		return nil, nil, errors.New("failed to list broker connections: tenant id must be supplied")
+	}
+	if appInstallID == "" {
+		return nil, nil, errors.New("failed to list broker connections: app install id must be supplied")
+	}
+	if deploymentID == "" {
+		return nil, nil, errors.New("failed to list broker connections: deployment id must be supplied")
+	}
+
+	opts := BaseOptions{Version: brokersAPIVersion}
+
+	path, err := addOptions(fmt.Sprintf(brokerConnectionsBasePath, tenantID, appInstallID, deploymentID), opts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.prepareRequest(ctx, http.MethodGet, s.client.restBaseURL, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(brokerConnectionsRoot)
+	resp, err := s.client.do(ctx, req, &root)
+	if err != nil {
+		return nil, resp, err
+	}
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+
+	return root.BrokerConnections, resp, nil
+}
+
+func (s *BrokersService) GetConnection(ctx context.Context, tenantID, appInstallID, deploymentID, connectionID string) (*BrokerConnection, *Response, error) {
+	if tenantID == "" {
+		return nil, nil, errors.New("failed to get broker connection: tenant id must be supplied")
+	}
+	if appInstallID == "" {
+		return nil, nil, errors.New("failed to get broker connection: app install id must be supplied")
+	}
+	if deploymentID == "" {
+		return nil, nil, errors.New("failed to get broker connection: deployment id must be supplied")
+	}
+	if connectionID == "" {
+		return nil, nil, errors.New("failed to get broker connection: connection id must be supplied")
+	}
+
+	opts := BaseOptions{Version: brokersAPIVersion}
+
+	path, err := addOptions(fmt.Sprintf(brokerConnectionBasePath, tenantID, appInstallID, deploymentID, connectionID), opts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.prepareRequest(ctx, http.MethodGet, s.client.restBaseURL, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(brokerConnectionRoot)
+	resp, err := s.client.do(ctx, req, &root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.BrokerConnection, resp, nil
+}
+
+func (s *BrokersService) CreateConnection(ctx context.Context, tenantID, appInstallID, deploymentID string, createRequest *BrokerConnectionCreateOrUpdateRequest) (*BrokerConnection, *Response, error) {
+	if tenantID == "" {
+		return nil, nil, errors.New("failed to create broker connection: tenant id must be supplied")
+	}
+	if appInstallID == "" {
+		return nil, nil, errors.New("failed to create broker connection: app install id must be supplied")
+	}
+	if deploymentID == "" {
+		return nil, nil, errors.New("failed to create broker connection: deployment id must be supplied")
+	}
+	if createRequest == nil {
+		return nil, nil, errors.New("failed to create broker connection: payload must be supplied")
+	}
+
+	opts := BaseOptions{Version: brokersAPIVersion}
+
+	path, err := addOptions(fmt.Sprintf(brokerConnectionsBasePath, tenantID, appInstallID, deploymentID), opts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	createPayload, err := buildBrokerConnectionRequestPayload(deploymentID, createRequest)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to build create broker connection request: %w", err)
+	}
+
+	req, err := s.client.prepareRequest(ctx, http.MethodPost, s.client.restBaseURL, path, createPayload)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(brokerConnectionRoot)
+	resp, err := s.client.do(ctx, req, &root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.BrokerConnection, resp, nil
+}
+
+func (s *BrokersService) UpdateConnection(ctx context.Context, tenantID, appInstallID, deploymentID, connectionID string, updateRequest *BrokerConnectionCreateOrUpdateRequest) (*BrokerConnection, *Response, error) {
+	if tenantID == "" {
+		return nil, nil, errors.New("failed to update broker connection: tenant id must be supplied")
+	}
+	if appInstallID == "" {
+		return nil, nil, errors.New("failed to update broker connection: app install id must be supplied")
+	}
+	if deploymentID == "" {
+		return nil, nil, errors.New("failed to update broker connection: deployment id must be supplied")
+	}
+	if connectionID == "" {
+		return nil, nil, errors.New("failed to update broker connection: connection id must be supplied")
+	}
+	if updateRequest == nil {
+		return nil, nil, errors.New("failed to update broker connection: payload must be supplied")
+	}
+
+	opts := BaseOptions{Version: brokersAPIVersion}
+
+	path, err := addOptions(fmt.Sprintf(brokerConnectionBasePath, tenantID, appInstallID, deploymentID, connectionID), opts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	updatePayload, err := buildBrokerConnectionRequestPayload(deploymentID, updateRequest)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to build update broker connection request: %w", err)
+	}
+
+	req, err := s.client.prepareRequest(ctx, http.MethodPatch, s.client.restBaseURL, path, updatePayload)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(brokerConnectionRoot)
+	resp, err := s.client.do(ctx, req, &root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.BrokerConnection, resp, nil
+}
+
+func (s *BrokersService) DeleteConnection(ctx context.Context, tenantID, appInstallID, deploymentID, connectionID string) (*Response, error) {
+	if tenantID == "" {
+		return nil, errors.New("failed to delete broker connection: tenant id must be supplied")
+	}
+	if appInstallID == "" {
+		return nil, errors.New("failed to delete broker connection: app install id must be supplied")
+	}
+	if deploymentID == "" {
+		return nil, errors.New("failed to delete broker connection: deployment id must be supplied")
+	}
+	if connectionID == "" {
+		return nil, errors.New("failed to delete broker connection: connection id must be supplied")
+	}
+
+	opts := BaseOptions{Version: brokersAPIVersion}
+
+	path, err := addOptions(fmt.Sprintf(brokerConnectionBasePath, tenantID, appInstallID, deploymentID, connectionID), opts)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := s.client.prepareRequest(ctx, http.MethodDelete, s.client.restBaseURL, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.client.do(ctx, req, nil)
+}
+
+// buildBrokerConnectionRequestPayload converts, validates and prepares request payloads
+// for BrokersService.CreateConnection and BrokersService.UpdateConnection() functions.
+func buildBrokerConnectionRequestPayload(deploymentID string, request *BrokerConnectionCreateOrUpdateRequest) (any, error) {
+	if request.Type == "" {
+		return nil, errors.New("request.Type must be supplied")
+	}
+
+	type configurationJSON struct {
+		Required struct {
+			ArtifactoryURL  string `json:"artifactory_url,omitempty"`
+			BrokerClientURL string `json:"broker_client_url,omitempty"`
+			GitLabHostname  string `json:"gitlab,omitempty"`
+			GitLabToken     string `json:"gitlab_token,omitempty"`
+			GitHubToken     string `json:"github_token,omitempty"`
+		} `json:"required"`
+		Type BrokerConnectionType `json:"type"`
+	}
+	var requestJSON struct {
+		Data struct {
+			Attributes struct {
+				Configuration configurationJSON `json:"configuration"`
+				DeploymentID  string            `json:"deployment_id"`
+				Name          string            `json:"name"`
+			} `json:"attributes"`
+			Type string `json:"type"`
+		} `json:"data"`
+	}
+
+	var configuration configurationJSON
+	configuration.Type = request.Type
+
+	switch request.Type {
+	case BrokerConnectionTypeArtifactory:
+		if request.ArtifactoryURL == "" {
+			return nil, errors.New("ArtifactoryURL must be supplied for artifactory connection type")
+		}
+		configuration.Required.ArtifactoryURL = request.ArtifactoryURL
+	case BrokerConnectionTypeGitHub:
+		if request.GitHubToken == "" {
+			return nil, errors.New("GitHubToken must be supplied for github connection type")
+		}
+		configuration.Required.GitHubToken = request.GitHubToken
+	case BrokerConnectionTypeGitLab:
+		if request.GitLabHostname == "" {
+			return nil, errors.New("GitLabHostname must be supplied for gitlab connection type")
+		}
+		if request.GitLabToken == "" {
+			return nil, errors.New("GitLabToken must be supplied for gitlab connection type")
+		}
+		configuration.Required.GitLabHostname = request.GitLabHostname
+		configuration.Required.GitLabToken = request.GitLabToken
+	default:
+		return nil, fmt.Errorf("unsupported broker connection type: %s", request.Type)
+	}
+
+	requestJSON.Data.Attributes.Configuration = configuration
+	requestJSON.Data.Attributes.DeploymentID = deploymentID
+	requestJSON.Data.Attributes.Name = request.Name
+	requestJSON.Data.Type = "broker_connection"
+
+	return requestJSON, nil
 }
