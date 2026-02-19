@@ -569,12 +569,13 @@ type BrokerConnectionArtifactoryConfiguration struct {
 }
 
 type BrokerConnectionCreateOrUpdateRequest struct {
-	ArtifactoryURL string
-	GitHubToken    string
-	GitLabHostname string
-	GitLabToken    string
-	Name           string
-	Type           BrokerConnectionType
+	ArtifactoryURL  string
+	BrokerClientURL string
+	GitHubToken     string
+	GitLabHostname  string
+	GitLabToken     string
+	Name            string
+	Type            BrokerConnectionType
 }
 
 type BrokerConnectionGitHubConfiguration struct {
@@ -855,17 +856,25 @@ func buildBrokerConnectionRequestPayload(deploymentID string, request *BrokerCon
 		}
 		configuration.Required.ArtifactoryURL = request.ArtifactoryURL
 	case BrokerConnectionTypeGitHub:
+		if request.BrokerClientURL == "" {
+			return nil, errors.New("BrokerClientURL must be supplied for github connection type")
+		}
 		if request.GitHubToken == "" {
 			return nil, errors.New("GitHubToken must be supplied for github connection type")
 		}
+		configuration.Required.BrokerClientURL = request.BrokerClientURL
 		configuration.Required.GitHubToken = request.GitHubToken
 	case BrokerConnectionTypeGitLab:
+		if request.BrokerClientURL == "" {
+			return nil, errors.New("BrokerClientURL must be supplied for gitlab connection type")
+		}
 		if request.GitLabHostname == "" {
 			return nil, errors.New("GitLabHostname must be supplied for gitlab connection type")
 		}
 		if request.GitLabToken == "" {
 			return nil, errors.New("GitLabToken must be supplied for gitlab connection type")
 		}
+		configuration.Required.BrokerClientURL = request.BrokerClientURL
 		configuration.Required.GitLabHostname = request.GitLabHostname
 		configuration.Required.GitLabToken = request.GitLabToken
 	default:
