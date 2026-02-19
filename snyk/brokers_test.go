@@ -747,7 +747,10 @@ func TestBrokers_CreateConnection(t *testing.T) {
       "identifier": "9dd6c62e-6541-4ff5-8e2c-e69e5183f2cc",
       "name": "test-github-connection",
       "configuration": {
-        "required": { "github_token": "${MY_GITHUB_TEST_TOKEN}" },
+        "required": {
+          "broker_client_url": "http://locahost:8080",
+          "github_token": "${MY_GITHUB_TEST_TOKEN}"
+        },
         "type": "github"
       }
     }
@@ -762,8 +765,10 @@ func TestBrokers_CreateConnection(t *testing.T) {
 		Attributes: &BrokerConnectionAttributes{
 			BrokerDeploymentID: "1793ad4f-f506-45a7-8c8c-d14f25fff941",
 			Configuration: &BrokerConnectionAttributesConfiguration{
-				GitHub: &BrokerConnectionGitHubConfiguration{GitHubToken: "${MY_GITHUB_TEST_TOKEN}"},
-				Type:   "github",
+				GitHub: &BrokerConnectionGitHubConfiguration{
+					BrokerClientURL: "http://locahost:8080",
+					GitHubToken:     "${MY_GITHUB_TEST_TOKEN}"},
+				Type: "github",
 			},
 			Identifier: "9dd6c62e-6541-4ff5-8e2c-e69e5183f2cc",
 			Name:       "test-github-connection",
@@ -773,8 +778,9 @@ func TestBrokers_CreateConnection(t *testing.T) {
 	actualConnection, _, err := client.Brokers.CreateConnection(
 		ctx, "tenant-id", "install-id", "deployment-id",
 		&BrokerConnectionCreateOrUpdateRequest{
-			GitHubToken: "1a519722-816d-4fdf-b501-2528e91bcda4",
-			Type:        BrokerConnectionTypeGitHub,
+			BrokerClientURL: "http://locahost:8080",
+			GitHubToken:     "1a519722-816d-4fdf-b501-2528e91bcda4",
+			Type:            BrokerConnectionTypeGitHub,
 		},
 	)
 
@@ -827,7 +833,10 @@ func TestBrokers_UpdateConnection(t *testing.T) {
       "identifier": "9dd6c62e-6541-4ff5-8e2c-e69e5183f2cc",
       "name": "test-github-connection-updated",
       "configuration": {
-        "required": { "github_token": "${MY_GITHUB_TEST_TOKEN}" },
+        "required": {
+          "broker_client_url": "http://locahost:8080",
+          "github_token": "${MY_GITHUB_TEST_TOKEN}"
+        },
         "type": "github"
       }
     }
@@ -842,8 +851,10 @@ func TestBrokers_UpdateConnection(t *testing.T) {
 		Attributes: &BrokerConnectionAttributes{
 			BrokerDeploymentID: "1793ad4f-f506-45a7-8c8c-d14f25fff941",
 			Configuration: &BrokerConnectionAttributesConfiguration{
-				GitHub: &BrokerConnectionGitHubConfiguration{GitHubToken: "${MY_GITHUB_TEST_TOKEN}"},
-				Type:   "github",
+				GitHub: &BrokerConnectionGitHubConfiguration{
+					BrokerClientURL: "http://locahost:8080",
+					GitHubToken:     "${MY_GITHUB_TEST_TOKEN}"},
+				Type: "github",
 			},
 			Identifier: "9dd6c62e-6541-4ff5-8e2c-e69e5183f2cc",
 			Name:       "test-github-connection-updated",
@@ -853,8 +864,9 @@ func TestBrokers_UpdateConnection(t *testing.T) {
 	actualConnection, _, err := client.Brokers.UpdateConnection(
 		ctx, "tenant-id", "install-id", "deployment-id", "connection-id",
 		&BrokerConnectionCreateOrUpdateRequest{
-			GitHubToken: "1a519722-816d-4fdf-b501-2528e91bcda4",
-			Type:        BrokerConnectionTypeGitHub,
+			BrokerClientURL: "http://locahost:8080",
+			GitHubToken:     "1a519722-816d-4fdf-b501-2528e91bcda4",
+			Type:            BrokerConnectionTypeGitHub,
 		},
 	)
 
