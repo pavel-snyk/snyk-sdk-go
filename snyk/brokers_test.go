@@ -949,3 +949,9 @@ func TestBrokers_DeleteConnection_emptyConnectionID(t *testing.T) {
 	assert.Error(t, err)
 	assert.ErrorContains(t, err, "connection id must be supplied")
 }
+
+func TestBrokers_buildBrokerConnectionRequestPayload(t *testing.T) {
+	_, err := buildBrokerConnectionRequestPayload("", nil)
+
+	assert.Error(t, err)
+}

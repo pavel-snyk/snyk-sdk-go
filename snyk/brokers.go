@@ -548,34 +548,97 @@ type BrokerConnectionAttributes struct {
 	Configuration      *BrokerConnectionAttributesConfiguration `json:"configuration"`           // The configuration of the BrokerConnection.
 }
 
-// BrokerConnectionType represents the type of BrokerConnection.
-type BrokerConnectionType string
-
-const (
-	BrokerConnectionTypeArtifactory BrokerConnectionType = "artifactory"
-	BrokerConnectionTypeGitLab      BrokerConnectionType = "gitlab"
-	BrokerConnectionTypeGitHub      BrokerConnectionType = "github"
-)
-
 type BrokerConnectionAttributesConfiguration struct {
-	Type        BrokerConnectionType `json:"type"` // The type of the BrokerConnection, e.g. 'gitlab' or 'github'.
-	Artifactory *BrokerConnectionArtifactoryConfiguration
-	GitHub      *BrokerConnectionGitHubConfiguration
-	GitLab      *BrokerConnectionGitLabConfiguration
+	Type             BrokerConnectionType `json:"type"` // The type of the BrokerConnection, e.g. 'gitlab' or 'github'.
+	ACR              *BrokerConnectionACRConfiguration
+	Artifactory      *BrokerConnectionArtifactoryConfiguration
+	ArtifactoryCR    *BrokerConnectionArtifactoryCRConfiguration
+	AzureRepos       *BrokerConnectionAzureReposConfiguration
+	BitbucketServer  *BrokerConnectionBitbucketServerConfiguration
+	DigitaloceanCR   *BrokerConnectionDigitaloceanCRConfiguration
+	DockerHub        *BrokerConnectionDockerHubConfiguration
+	ECR              *BrokerConnectionECRConfiguration
+	GCR              *BrokerConnectionGCRConfiguration
+	GitHub           *BrokerConnectionGitHubConfiguration
+	GitHubCloudApp   *BrokerConnectionGitHubCloudAppConfiguration
+	GitHubCR         *BrokerConnectionGitHubCRConfiguration
+	GitHubEnterprise *BrokerConnectionGitHubEnterpriseConfiguration
+	GitHubServerApp  *BrokerConnectionGitHubServerAppConfiguration
+	GitLab           *BrokerConnectionGitLabConfiguration
+	GitLabCR         *BrokerConnectionGitLabCRConfiguration
+	GoogleArtifactCR *BrokerConnectionGoogleArtifactCRConfiguration
+	Jira             *BrokerConnectionJiraConfiguration
+	HarborCR         *BrokerConnectionHarborCRConfiguration
+	Nexus            *BrokerConnectionNexusConfiguration
+	NexusCR          *BrokerConnectionNexusCRConfiguration
+	QuayCR           *BrokerConnectionQuayCRConfiguration
+}
+
+type BrokerConnectionACRConfiguration struct {
+	BrokerClientURL string `json:"broker_client_url"`
+	CRAgentURL      string `json:"cr_agent_url"`
+	CRBase          string `json:"cr_base"`
+	CRPassword      string `json:"cr_password"`
+	CRUsername      string `json:"cr_username"`
 }
 
 type BrokerConnectionArtifactoryConfiguration struct {
 	ArtifactoryURL string `json:"artifactory_url"`
 }
 
-type BrokerConnectionCreateOrUpdateRequest struct {
-	ArtifactoryURL  string
-	BrokerClientURL string
-	GitHubToken     string
-	GitLabHostname  string
-	GitLabToken     string
-	Name            string
-	Type            BrokerConnectionType
+type BrokerConnectionArtifactoryCRConfiguration struct {
+	BrokerClientURL string `json:"broker_client_url"`
+	CRAgentURL      string `json:"cr_agent_url"`
+	CRBase          string `json:"cr_base"`
+	CRPassword      string `json:"cr_password"`
+	CRUsername      string `json:"cr_username"`
+}
+
+type BrokerConnectionAzureReposConfiguration struct {
+	AzureReposHost  string `json:"azure_repos_host"`
+	AzureReposOrg   string `json:"azure_repos_org"`
+	AzureReposToken string `json:"azure_repos_token"`
+	BrokerClientURL string `json:"broker_client_url"`
+}
+
+type BrokerConnectionBitbucketServerConfiguration struct {
+	BrokerClientURL   string `json:"broker_client_url"`
+	BitbucketHostname string `json:"bitbucket"`
+	BitbucketPAT      string `json:"bitbucket_pat,omitempty"`
+	BitbucketPassword string `json:"bitbucket_password,omitempty"`
+	BitbucketUsername string `json:"bitbucket_username,omitempty"`
+}
+
+type BrokerConnectionDigitaloceanCRConfiguration struct {
+	BrokerClientURL string `json:"broker_client_url"`
+	CRAgentURL      string `json:"cr_agent_url"`
+	CRBase          string `json:"cr_base"`
+	CRToken         string `json:"cr_token"`
+}
+
+type BrokerConnectionDockerHubConfiguration struct {
+	BrokerClientURL string `json:"broker_client_url"`
+	CRAgentURL      string `json:"cr_agent_url"`
+	CRBase          string `json:"cr_base"`
+	CRPassword      string `json:"cr_password"`
+	CRUsername      string `json:"cr_username"`
+}
+
+type BrokerConnectionECRConfiguration struct {
+	BrokerClientURL string `json:"broker_client_url"`
+	CRAgentURL      string `json:"cr_agent_url"`
+	CRBase          string `json:"cr_base"`
+	CRExternalID    string `json:"cr_external_id"`
+	CRRegion        string `json:"cr_region"`
+	CRRoleARN       string `json:"cr_role_arn"`
+}
+
+type BrokerConnectionGCRConfiguration struct {
+	BrokerClientURL string `json:"broker_client_url"`
+	CRAgentURL      string `json:"cr_agent_url"`
+	CRBase          string `json:"cr_base"`
+	CRPassword      string `json:"cr_password"`
+	CRUsername      string `json:"cr_username"`
 }
 
 type BrokerConnectionGitHubConfiguration struct {
@@ -583,10 +646,95 @@ type BrokerConnectionGitHubConfiguration struct {
 	GitHubToken     string `json:"github_token"`
 }
 
+type BrokerConnectionGitHubCloudAppConfiguration struct {
+	BrokerClientURL         string `json:"broker_client_url"`
+	GitHubHostname          string `json:"github"`
+	GitHubAPIHostname       string `json:"github_api"`
+	GitHubAppClientID       string `json:"github_app_client_id"`
+	GitHubAppID             string `json:"github_app_id"`
+	GitHubAppInstallationID string `json:"github_app_installation_id"`
+	GitHubAppPrivatePEMPath string `json:"github_app_private_pem_path"`
+}
+
+type BrokerConnectionGitHubCRConfiguration struct {
+	BrokerClientURL string `json:"broker_client_url"`
+	CRAgentURL      string `json:"cr_agent_url"`
+	CRBase          string `json:"cr_base"`
+	CRPassword      string `json:"cr_password"`
+	CRUsername      string `json:"cr_username"`
+}
+
+type BrokerConnectionGitHubEnterpriseConfiguration struct {
+	BrokerClientURL string `json:"broker_client_url"`
+	GitHubHostname  string `json:"github"`
+	GitHubToken     string `json:"github_token"`
+}
+
+type BrokerConnectionGitHubServerAppConfiguration struct {
+	BrokerClientURL         string `json:"broker_client_url"`
+	GitHubHostname          string `json:"github"`
+	GitHubAPIHostname       string `json:"github_api"`
+	GitHubAppClientID       string `json:"github_app_client_id"`
+	GitHubAppID             string `json:"github_app_id"`
+	GitHubAppInstallationID string `json:"github_app_installation_id"`
+	GitHubAppPrivatePEMPath string `json:"github_app_private_pem_path"`
+}
+
 type BrokerConnectionGitLabConfiguration struct {
 	BrokerClientURL string `json:"broker_client_url"`
 	GitLabHostname  string `json:"gitlab"`
 	GitLabToken     string `json:"gitlab_token"`
+}
+
+type BrokerConnectionGitLabCRConfiguration struct {
+	BrokerClientURL string `json:"broker_client_url"`
+	CRAgentURL      string `json:"cr_agent_url"`
+	CRBase          string `json:"cr_base"`
+	CRPassword      string `json:"cr_password"`
+	CRUsername      string `json:"cr_username"`
+}
+
+type BrokerConnectionGoogleArtifactCRConfiguration struct {
+	BrokerClientURL string `json:"broker_client_url"`
+	CRAgentURL      string `json:"cr_agent_url"`
+	CRBase          string `json:"cr_base"`
+	CRPassword      string `json:"cr_password"`
+	CRUsername      string `json:"cr_username"`
+}
+
+type BrokerConnectionJiraConfiguration struct {
+	JiraHostname string `json:"jira_hostname"`
+	JiraPAT      string `json:"jira_pat,omitempty"`
+	JiraPassword string `json:"jira_password,omitempty"`
+	JiraUsername string `json:"jira_username,omitempty"`
+}
+
+type BrokerConnectionHarborCRConfiguration struct {
+	BrokerClientURL string `json:"broker_client_url"`
+	CRAgentURL      string `json:"cr_agent_url"`
+	CRBase          string `json:"cr_base"`
+	CRPassword      string `json:"cr_password"`
+	CRUsername      string `json:"cr_username"`
+}
+
+type BrokerConnectionNexusConfiguration struct {
+	BaseNexusURL string `json:"base_nexus_url"`
+}
+
+type BrokerConnectionNexusCRConfiguration struct {
+	BrokerClientURL string `json:"broker_client_url"`
+	CRAgentURL      string `json:"cr_agent_url"`
+	CRBase          string `json:"cr_base"`
+	CRPassword      string `json:"cr_password"`
+	CRUsername      string `json:"cr_username"`
+}
+
+type BrokerConnectionQuayCRConfiguration struct {
+	BrokerClientURL string `json:"broker_client_url"`
+	CRAgentURL      string `json:"cr_agent_url"`
+	CRBase          string `json:"cr_base"`
+	CRPassword      string `json:"cr_password"`
+	CRUsername      string `json:"cr_username"`
 }
 
 // UnmarshalJSON is a custom unmarshaller that handles the discriminator logic for BrokerConnectionAttributesConfiguration.
@@ -602,27 +750,207 @@ func (c *BrokerConnectionAttributesConfiguration) UnmarshalJSON(data []byte) err
 	c.Type = raw.Type
 
 	switch c.Type {
+	case BrokerConnectionTypeACR:
+		var acrConfig BrokerConnectionACRConfiguration
+		if err := json.Unmarshal(raw.Required, &acrConfig); err != nil {
+			return err
+		}
+		c.ACR = &acrConfig
 	case BrokerConnectionTypeArtifactory:
 		var artifactoryConfig BrokerConnectionArtifactoryConfiguration
 		if err := json.Unmarshal(raw.Required, &artifactoryConfig); err != nil {
 			return err
 		}
 		c.Artifactory = &artifactoryConfig
+	case BrokerConnectionTypeArtifactoryCR:
+		var artifactoryCRConfig BrokerConnectionArtifactoryCRConfiguration
+		if err := json.Unmarshal(raw.Required, &artifactoryCRConfig); err != nil {
+			return err
+		}
+		c.ArtifactoryCR = &artifactoryCRConfig
+	case BrokerConnectionTypeAzureRepos:
+		var azureReposConfig BrokerConnectionAzureReposConfiguration
+		if err := json.Unmarshal(raw.Required, &azureReposConfig); err != nil {
+			return err
+		}
+		c.AzureRepos = &azureReposConfig
+	case BrokerConnectionTypeBitbucketServer:
+		var bitbucketServerConfig BrokerConnectionBitbucketServerConfiguration
+		if err := json.Unmarshal(raw.Required, &bitbucketServerConfig); err != nil {
+			return err
+		}
+		c.BitbucketServer = &bitbucketServerConfig
+	case BrokerConnectionTypeDigitaloceanCR:
+		var digitaloceanCRConfig BrokerConnectionDigitaloceanCRConfiguration
+		if err := json.Unmarshal(raw.Required, &digitaloceanCRConfig); err != nil {
+			return err
+		}
+		c.DigitaloceanCR = &digitaloceanCRConfig
+	case BrokerConnectionTypeDockerHub:
+		var dockerHubConfig BrokerConnectionDockerHubConfiguration
+		if err := json.Unmarshal(raw.Required, &dockerHubConfig); err != nil {
+			return err
+		}
+		c.DockerHub = &dockerHubConfig
+	case BrokerConnectionTypeECR:
+		var ecrConfig BrokerConnectionECRConfiguration
+		if err := json.Unmarshal(raw.Required, &ecrConfig); err != nil {
+			return err
+		}
+		c.ECR = &ecrConfig
+	case BrokerConnectionTypeGCR:
+		var gcrConfig BrokerConnectionGCRConfiguration
+		if err := json.Unmarshal(raw.Required, &gcrConfig); err != nil {
+			return err
+		}
+		c.GCR = &gcrConfig
 	case BrokerConnectionTypeGitHub:
 		var githubConfig BrokerConnectionGitHubConfiguration
 		if err := json.Unmarshal(raw.Required, &githubConfig); err != nil {
 			return err
 		}
 		c.GitHub = &githubConfig
+	case BrokerConnectionTypeGitHubCloudApp:
+		var githubCloudAppConfig BrokerConnectionGitHubCloudAppConfiguration
+		if err := json.Unmarshal(raw.Required, &githubCloudAppConfig); err != nil {
+			return err
+		}
+		c.GitHubCloudApp = &githubCloudAppConfig
+	case BrokerConnectionTypeGitHubCR:
+		var githubCRConfig BrokerConnectionGitHubCRConfiguration
+		if err := json.Unmarshal(raw.Required, &githubCRConfig); err != nil {
+			return err
+		}
+		c.GitHubCR = &githubCRConfig
+	case BrokerConnectionTypeGitHubEnterprise:
+		var githubEnterpriseConfig BrokerConnectionGitHubEnterpriseConfiguration
+		if err := json.Unmarshal(raw.Required, &githubEnterpriseConfig); err != nil {
+			return err
+		}
+		c.GitHubEnterprise = &githubEnterpriseConfig
+	case BrokerConnectionTypeGitHubServerApp:
+		var githubServerAppConfig BrokerConnectionGitHubServerAppConfiguration
+		if err := json.Unmarshal(raw.Required, &githubServerAppConfig); err != nil {
+			return err
+		}
+		c.GitHubServerApp = &githubServerAppConfig
 	case BrokerConnectionTypeGitLab:
 		var gitlabConfig BrokerConnectionGitLabConfiguration
 		if err := json.Unmarshal(raw.Required, &gitlabConfig); err != nil {
 			return err
 		}
 		c.GitLab = &gitlabConfig
+	case BrokerConnectionTypeGitLabCR:
+		var gitlabCRConfig BrokerConnectionGitLabCRConfiguration
+		if err := json.Unmarshal(raw.Required, &gitlabCRConfig); err != nil {
+			return err
+		}
+		c.GitLabCR = &gitlabCRConfig
+	case BrokerConnectionTypeGoogleArtifactCR:
+		var googleArtifactCRConfig BrokerConnectionGoogleArtifactCRConfiguration
+		if err := json.Unmarshal(raw.Required, &googleArtifactCRConfig); err != nil {
+			return err
+		}
+		c.GoogleArtifactCR = &googleArtifactCRConfig
+	case BrokerConnectionTypeJira:
+		var jiraConfig BrokerConnectionJiraConfiguration
+		if err := json.Unmarshal(raw.Required, &jiraConfig); err != nil {
+			return err
+		}
+		c.Jira = &jiraConfig
+	case BrokerConnectionTypeHarborCR:
+		var harborCRConfig BrokerConnectionHarborCRConfiguration
+		if err := json.Unmarshal(raw.Required, &harborCRConfig); err != nil {
+			return err
+		}
+		c.HarborCR = &harborCRConfig
+	case BrokerConnectionTypeNexus:
+		var nexusConfig BrokerConnectionNexusConfiguration
+		if err := json.Unmarshal(raw.Required, &nexusConfig); err != nil {
+			return err
+		}
+		c.Nexus = &nexusConfig
+	case BrokerConnectionTypeNexusCR:
+		var nexusCRConfig BrokerConnectionNexusCRConfiguration
+		if err := json.Unmarshal(raw.Required, &nexusCRConfig); err != nil {
+			return err
+		}
+		c.NexusCR = &nexusCRConfig
+	case BrokerConnectionTypeQuayCR:
+		var quayCRConfig BrokerConnectionQuayCRConfiguration
+		if err := json.Unmarshal(raw.Required, &quayCRConfig); err != nil {
+			return err
+		}
+		c.QuayCR = &quayCRConfig
+	default:
+		return fmt.Errorf("unsupported broker connection type: %s", c.Type)
 	}
 
 	return nil
+}
+
+// BrokerConnectionType represents the type of BrokerConnection.
+type BrokerConnectionType string
+
+const (
+	BrokerConnectionTypeACR              BrokerConnectionType = "acr"
+	BrokerConnectionTypeArtifactory      BrokerConnectionType = "artifactory"
+	BrokerConnectionTypeArtifactoryCR    BrokerConnectionType = "artifactory-cr"
+	BrokerConnectionTypeAzureRepos       BrokerConnectionType = "azure-repos"
+	BrokerConnectionTypeBitbucketServer  BrokerConnectionType = "bitbucket-server"
+	BrokerConnectionTypeDigitaloceanCR   BrokerConnectionType = "digitalocean-cr"
+	BrokerConnectionTypeDockerHub        BrokerConnectionType = "docker-hub"
+	BrokerConnectionTypeECR              BrokerConnectionType = "ecr"
+	BrokerConnectionTypeGCR              BrokerConnectionType = "gcr"
+	BrokerConnectionTypeGitHub           BrokerConnectionType = "github"
+	BrokerConnectionTypeGitHubCloudApp   BrokerConnectionType = "github-cloud-app"
+	BrokerConnectionTypeGitHubCR         BrokerConnectionType = "github-cr"
+	BrokerConnectionTypeGitHubEnterprise BrokerConnectionType = "github-enterprise"
+	BrokerConnectionTypeGitHubServerApp  BrokerConnectionType = "github-server-app"
+	BrokerConnectionTypeGitLab           BrokerConnectionType = "gitlab"
+	BrokerConnectionTypeGitLabCR         BrokerConnectionType = "gitlab-cr"
+	BrokerConnectionTypeGoogleArtifactCR BrokerConnectionType = "google-artifact-cr"
+	BrokerConnectionTypeJira             BrokerConnectionType = "jira"
+	BrokerConnectionTypeHarborCR         BrokerConnectionType = "harbor-cr"
+	BrokerConnectionTypeNexus            BrokerConnectionType = "nexus"
+	BrokerConnectionTypeNexusCR          BrokerConnectionType = "nexus-cr"
+	BrokerConnectionTypeQuayCR           BrokerConnectionType = "quay-cr"
+)
+
+type BrokerConnectionCreateOrUpdateRequest struct {
+	ArtifactoryURL          string
+	AzureReposHost          string
+	AzureReposOrg           string
+	AzureReposToken         string
+	CRAgentURL              string
+	CRBase                  string
+	CRExternalID            string
+	CRPassword              string
+	CRRegion                string
+	CRRoleARN               string
+	CRToken                 string
+	CRUsername              string
+	BitbucketHostname       string
+	BitbucketPAT            string
+	BitbucketPassword       string
+	BitbucketUsername       string
+	BrokerClientURL         string
+	GitHubAPIHostname       string
+	GitHubAppClientID       string
+	GitHubAppID             string
+	GitHubAppInstallationID string
+	GitHubAppPrivatePEMPath string
+	GitHubHostname          string
+	GitHubToken             string
+	GitLabHostname          string
+	GitLabToken             string
+	JiraHostname            string
+	JiraPAT                 string
+	JiraPassword            string
+	JiraUsername            string
+	NexusBaseURL            string
+	Name                    string
+	Type                    BrokerConnectionType
 }
 
 type brokerConnectionRoot struct {
@@ -821,17 +1149,43 @@ func (s *BrokersService) DeleteConnection(ctx context.Context, tenantID, appInst
 // buildBrokerConnectionRequestPayload converts, validates and prepares request payloads
 // for BrokersService.CreateConnection and BrokersService.UpdateConnection() functions.
 func buildBrokerConnectionRequestPayload(deploymentID string, request *BrokerConnectionCreateOrUpdateRequest) (any, error) {
-	if request.Type == "" {
-		return nil, errors.New("request.Type must be supplied")
+	if request == nil || request.Type == "" {
+		return nil, errors.New("request.Type must be supplied for connection request payload")
 	}
 
 	type configurationJSON struct {
 		Required struct {
-			ArtifactoryURL  string `json:"artifactory_url,omitempty"`
-			BrokerClientURL string `json:"broker_client_url,omitempty"`
-			GitLabHostname  string `json:"gitlab,omitempty"`
-			GitLabToken     string `json:"gitlab_token,omitempty"`
-			GitHubToken     string `json:"github_token,omitempty"`
+			ArtifactoryURL          string `json:"artifactory_url,omitempty"`
+			AzureReposHost          string `json:"azure_repos_host,omitempty"`
+			AzureReposOrg           string `json:"azure_repos_org,omitempty"`
+			AzureReposToken         string `json:"azure_repos_token,omitempty"`
+			BitbucketHostname       string `json:"bitbucket,omitempty"`
+			BitbucketPAT            string `json:"bitbucket_pat,omitempty"`
+			BitbucketPassword       string `json:"bitbucket_password,omitempty"`
+			BitbucketUsername       string `json:"bitbucket_username,omitempty"`
+			BrokerClientURL         string `json:"broker_client_url,omitempty"`
+			CRAgentURL              string `json:"cr_agent_url,omitempty"`
+			CRBase                  string `json:"cr_base,omitempty"`
+			CRExternalID            string `json:"cr_external_id,omitempty"`
+			CRPassword              string `json:"cr_password,omitempty"`
+			CRRegion                string `json:"cr_region,omitempty"`
+			CRRoleARN               string `json:"cr_role_arn,omitempty"`
+			CRToken                 string `json:"cr_token,omitempty"`
+			CRUsername              string `json:"cr_username,omitempty"`
+			GitLabHostname          string `json:"gitlab,omitempty"`
+			GitLabToken             string `json:"gitlab_token,omitempty"`
+			GitHubHostname          string `json:"github,omitempty"`
+			GitHubAPIHostname       string `json:"github_api,omitempty"`
+			GitHubAppClientID       string `json:"github_app_client_id,omitempty"`
+			GitHubAppID             string `json:"github_app_id,omitempty"`
+			GitHubAppInstallationID string `json:"github_app_installation_id,omitempty"`
+			GitHubAppPrivatePEMPath string `json:"github_app_private_pem_path,omitempty"`
+			GitHubToken             string `json:"github_token,omitempty"`
+			JiraHostname            string `json:"jira_hostname,omitempty"`
+			JiraPAT                 string `json:"jira_pat,omitempty"`
+			JiraPassword            string `json:"jira_password,omitempty"`
+			JiraUsername            string `json:"jira_username,omitempty"`
+			NexusBaseURL            string `json:"base_nexus_url,omitempty"`
 		} `json:"required"`
 		Type BrokerConnectionType `json:"type"`
 	}
@@ -850,11 +1204,178 @@ func buildBrokerConnectionRequestPayload(deploymentID string, request *BrokerCon
 	configuration.Type = request.Type
 
 	switch request.Type {
+	case BrokerConnectionTypeACR:
+		if request.BrokerClientURL == "" {
+			return nil, errors.New("BrokerClientURL must be supplied for acr connection type")
+		}
+		if request.CRAgentURL == "" {
+			return nil, errors.New("CRAgentURL must be supplied for acr connection type")
+		}
+		if request.CRBase == "" {
+			return nil, errors.New("CRBase must be supplied for acr connection type")
+		}
+		if request.CRPassword == "" {
+			return nil, errors.New("CRPassword must be supplied for acr connection type")
+		}
+		if request.CRUsername == "" {
+			return nil, errors.New("CRUsername must be supplied for acr connection type")
+		}
+		configuration.Required.BrokerClientURL = request.BrokerClientURL
+		configuration.Required.CRAgentURL = request.CRAgentURL
+		configuration.Required.CRBase = request.CRBase
+		configuration.Required.CRPassword = request.CRPassword
+		configuration.Required.CRUsername = request.CRUsername
 	case BrokerConnectionTypeArtifactory:
 		if request.ArtifactoryURL == "" {
 			return nil, errors.New("ArtifactoryURL must be supplied for artifactory connection type")
 		}
 		configuration.Required.ArtifactoryURL = request.ArtifactoryURL
+	case BrokerConnectionTypeArtifactoryCR:
+		if request.BrokerClientURL == "" {
+			return nil, errors.New("BrokerClientURL must be supplied for artifactory-cr connection type")
+		}
+		if request.CRAgentURL == "" {
+			return nil, errors.New("CRAgentURL must be supplied for artifactory-cr connection type")
+		}
+		if request.CRBase == "" {
+			return nil, errors.New("CRBase must be supplied for artifactory-cr connection type")
+		}
+		if request.CRPassword == "" {
+			return nil, errors.New("CRPassword must be supplied for artifactory-cr connection type")
+		}
+		if request.CRUsername == "" {
+			return nil, errors.New("CRUsername must be supplied for artifactory-cr connection type")
+		}
+		configuration.Required.BrokerClientURL = request.BrokerClientURL
+		configuration.Required.CRAgentURL = request.CRAgentURL
+		configuration.Required.CRBase = request.CRBase
+		configuration.Required.CRPassword = request.CRPassword
+		configuration.Required.CRUsername = request.CRUsername
+	case BrokerConnectionTypeAzureRepos:
+		if request.BrokerClientURL == "" {
+			return nil, errors.New("BrokerClientURL must be supplied for azure-repos connection type")
+		}
+		if request.AzureReposHost == "" {
+			return nil, errors.New("AzureReposHost must be supplied for azure-repos connection type")
+		}
+		if request.AzureReposOrg == "" {
+			return nil, errors.New("AzureReposOrg must be supplied for azure-repos connection type")
+		}
+		if request.AzureReposToken == "" {
+			return nil, errors.New("AzureReposToken must be supplied for azure-repos connection type")
+		}
+		configuration.Required.BrokerClientURL = request.BrokerClientURL
+		configuration.Required.AzureReposHost = request.AzureReposHost
+		configuration.Required.AzureReposOrg = request.AzureReposOrg
+		configuration.Required.AzureReposToken = request.AzureReposToken
+	case BrokerConnectionTypeBitbucketServer:
+		if request.BrokerClientURL == "" {
+			return nil, errors.New("BrokerClientURL must be supplied for bitbucket-server connection type")
+		}
+		if request.BitbucketHostname == "" {
+			return nil, errors.New("BrokerClientURL must be supplied for bitbucket-server connection type")
+		}
+		if request.BitbucketPAT == "" && request.BitbucketPassword == "" && request.BitbucketUsername == "" {
+			return nil, errors.New("BitbucketPAT, BitbucketPassword or BitbucketUsername must be supplied for bitbucket-server connection type")
+		}
+		if request.BitbucketPAT != "" && request.BitbucketPassword != "" && request.BitbucketUsername != "" {
+			return nil, errors.New("BitbucketPAT, BitbucketPassword and BitbucketUsername must not be supplied together for bitbucket-server connection type")
+		}
+		if request.BitbucketPAT != "" && (request.BitbucketPassword != "" || request.BitbucketUsername != "") {
+			return nil, errors.New("BitbucketPAT cannot be supplied together with BitbucketPassword and BitbucketUsername for bitbucket-server connection type")
+		}
+		configuration.Required.BrokerClientURL = request.BrokerClientURL
+		configuration.Required.BitbucketHostname = request.BitbucketHostname
+		if request.BitbucketPAT != "" {
+			configuration.Required.BitbucketPAT = request.BitbucketPAT
+		} else {
+			configuration.Required.BitbucketPassword = request.BitbucketPassword
+			configuration.Required.BitbucketUsername = request.BitbucketUsername
+		}
+	case BrokerConnectionTypeDigitaloceanCR:
+		if request.BrokerClientURL == "" {
+			return nil, errors.New("BrokerClientURL must be supplied for digitalocean-cr connection type")
+		}
+		if request.CRAgentURL == "" {
+			return nil, errors.New("CRAgentURL must be supplied for digitalocean-cr connection type")
+		}
+		if request.CRBase == "" {
+			return nil, errors.New("CRBase must be supplied for digitalocean-cr connection type")
+		}
+		if request.CRToken == "" {
+			return nil, errors.New("CRToken must be supplied for digitalocean-cr connection type")
+		}
+		configuration.Required.BrokerClientURL = request.BrokerClientURL
+		configuration.Required.CRAgentURL = request.CRAgentURL
+		configuration.Required.CRBase = request.CRBase
+		configuration.Required.CRToken = request.CRToken
+	case BrokerConnectionTypeDockerHub:
+		if request.BrokerClientURL == "" {
+			return nil, errors.New("BrokerClientURL must be supplied for docker-hub connection type")
+		}
+		if request.CRAgentURL == "" {
+			return nil, errors.New("CRAgentURL must be supplied for docker-hub connection type")
+		}
+		if request.CRBase == "" {
+			return nil, errors.New("CRBase must be supplied for docker-hub connection type")
+		}
+		if request.CRPassword == "" {
+			return nil, errors.New("CRPassword must be supplied for docker-hub connection type")
+		}
+		if request.CRUsername == "" {
+			return nil, errors.New("CRUsername must be supplied for docker-hub connection type")
+		}
+		configuration.Required.BrokerClientURL = request.BrokerClientURL
+		configuration.Required.CRAgentURL = request.CRAgentURL
+		configuration.Required.CRBase = request.CRBase
+		configuration.Required.CRPassword = request.CRPassword
+		configuration.Required.CRUsername = request.CRUsername
+	case BrokerConnectionTypeECR:
+		if request.BrokerClientURL == "" {
+			return nil, errors.New("BrokerClientURL must be supplied for ecr connection type")
+		}
+		if request.CRAgentURL == "" {
+			return nil, errors.New("CRAgentURL must be supplied for ecr connection type")
+		}
+		if request.CRBase == "" {
+			return nil, errors.New("CRBase must be supplied for ecr connection type")
+		}
+		if request.CRExternalID == "" {
+			return nil, errors.New("CRExternalID must be supplied for ecr connection type")
+		}
+		if request.CRRegion == "" {
+			return nil, errors.New("CRRegion must be supplied for ecr connection type")
+		}
+		if request.CRRoleARN == "" {
+			return nil, errors.New("CRRoleARN must be supplied for ecr connection type")
+		}
+		configuration.Required.BrokerClientURL = request.BrokerClientURL
+		configuration.Required.CRAgentURL = request.CRAgentURL
+		configuration.Required.CRBase = request.CRBase
+		configuration.Required.CRExternalID = request.CRExternalID
+		configuration.Required.CRRegion = request.CRRegion
+		configuration.Required.CRRoleARN = request.CRRoleARN
+	case BrokerConnectionTypeGCR:
+		if request.BrokerClientURL == "" {
+			return nil, errors.New("BrokerClientURL must be supplied for gcr connection type")
+		}
+		if request.CRAgentURL == "" {
+			return nil, errors.New("CRAgentURL must be supplied for gcr connection type")
+		}
+		if request.CRBase == "" {
+			return nil, errors.New("CRBase must be supplied for gcr connection type")
+		}
+		if request.CRPassword == "" {
+			return nil, errors.New("CRPassword must be supplied for gcr connection type")
+		}
+		if request.CRUsername == "" {
+			return nil, errors.New("CRUsername must be supplied for gcr connection type")
+		}
+		configuration.Required.BrokerClientURL = request.BrokerClientURL
+		configuration.Required.CRAgentURL = request.CRAgentURL
+		configuration.Required.CRBase = request.CRBase
+		configuration.Required.CRPassword = request.CRPassword
+		configuration.Required.CRUsername = request.CRUsername
 	case BrokerConnectionTypeGitHub:
 		if request.BrokerClientURL == "" {
 			return nil, errors.New("BrokerClientURL must be supplied for github connection type")
@@ -864,6 +1385,98 @@ func buildBrokerConnectionRequestPayload(deploymentID string, request *BrokerCon
 		}
 		configuration.Required.BrokerClientURL = request.BrokerClientURL
 		configuration.Required.GitHubToken = request.GitHubToken
+	case BrokerConnectionTypeGitHubCloudApp:
+		if request.BrokerClientURL == "" {
+			return nil, errors.New("BrokerClientURL must be supplied for github-cloud-app connection type")
+		}
+		if request.GitHubHostname == "" {
+			return nil, errors.New("GitHubHostname must be supplied for github-cloud-app connection type")
+		}
+		if request.GitHubAPIHostname == "" {
+			return nil, errors.New("GitHubAPIHostname must be supplied for github-cloud-app connection type")
+		}
+		if request.GitHubAppClientID == "" {
+			return nil, errors.New("GitHubAppClientID must be supplied for github-cloud-app connection type")
+		}
+		if request.GitHubAppID == "" {
+			return nil, errors.New("GitHubAppID must be supplied for github-cloud-app connection type")
+		}
+		if request.GitHubAppInstallationID == "" {
+			return nil, errors.New("GitHubAppInstallationID must be supplied for github-cloud-app connection type")
+		}
+		if request.GitHubAppPrivatePEMPath == "" {
+			return nil, errors.New("GitHubAppPrivatePEMPath must be supplied for github-cloud-app connection type")
+		}
+		configuration.Required.BrokerClientURL = request.BrokerClientURL
+		configuration.Required.GitHubHostname = request.GitHubHostname
+		configuration.Required.GitHubAPIHostname = request.GitHubAPIHostname
+		configuration.Required.GitHubAppClientID = request.GitHubAppClientID
+		configuration.Required.GitHubAppID = request.GitHubAppID
+		configuration.Required.GitHubAppInstallationID = request.GitHubAppInstallationID
+		configuration.Required.GitHubAppPrivatePEMPath = request.GitHubAppPrivatePEMPath
+	case BrokerConnectionTypeGitHubCR:
+		if request.BrokerClientURL == "" {
+			return nil, errors.New("BrokerClientURL must be supplied for github-cr connection type")
+		}
+		if request.CRAgentURL == "" {
+			return nil, errors.New("CRAgentURL must be supplied for github-cr connection type")
+		}
+		if request.CRBase == "" {
+			return nil, errors.New("CRBase must be supplied for github-cr connection type")
+		}
+		if request.CRPassword == "" {
+			return nil, errors.New("CRPassword must be supplied for github-cr connection type")
+		}
+		if request.CRUsername == "" {
+			return nil, errors.New("CRUsername must be supplied for github-cr connection type")
+		}
+		configuration.Required.BrokerClientURL = request.BrokerClientURL
+		configuration.Required.CRAgentURL = request.CRAgentURL
+		configuration.Required.CRBase = request.CRBase
+		configuration.Required.CRPassword = request.CRPassword
+		configuration.Required.CRUsername = request.CRUsername
+	case BrokerConnectionTypeGitHubEnterprise:
+		if request.BrokerClientURL == "" {
+			return nil, errors.New("BrokerClientURL must be supplied for github-enterprise connection type")
+		}
+		if request.GitHubHostname == "" {
+			return nil, errors.New("GitHubHostname must be supplied for github-enterprise connection type")
+		}
+		if request.GitHubToken == "" {
+			return nil, errors.New("GitHubToken must be supplied for github-enterprise connection type")
+		}
+		configuration.Required.BrokerClientURL = request.BrokerClientURL
+		configuration.Required.GitHubHostname = request.GitHubHostname
+		configuration.Required.GitHubToken = request.GitHubToken
+	case BrokerConnectionTypeGitHubServerApp:
+		if request.BrokerClientURL == "" {
+			return nil, errors.New("BrokerClientURL must be supplied for github-server-app connection type")
+		}
+		if request.GitHubHostname == "" {
+			return nil, errors.New("GitHubHostname must be supplied for github-server-app connection type")
+		}
+		if request.GitHubAPIHostname == "" {
+			return nil, errors.New("GitHubAPIHostname must be supplied for github-server-app connection type")
+		}
+		if request.GitHubAppClientID == "" {
+			return nil, errors.New("GitHubAppClientID must be supplied for github-server-app connection type")
+		}
+		if request.GitHubAppID == "" {
+			return nil, errors.New("GitHubAppID must be supplied for github-server-app connection type")
+		}
+		if request.GitHubAppInstallationID == "" {
+			return nil, errors.New("GitHubAppInstallationID must be supplied for github-server-app connection type")
+		}
+		if request.GitHubAppPrivatePEMPath == "" {
+			return nil, errors.New("GitHubAppPrivatePEMPath must be supplied for github-server-app connection type")
+		}
+		configuration.Required.BrokerClientURL = request.BrokerClientURL
+		configuration.Required.GitHubHostname = request.GitHubHostname
+		configuration.Required.GitHubAPIHostname = request.GitHubAPIHostname
+		configuration.Required.GitHubAppClientID = request.GitHubAppClientID
+		configuration.Required.GitHubAppID = request.GitHubAppID
+		configuration.Required.GitHubAppInstallationID = request.GitHubAppInstallationID
+		configuration.Required.GitHubAppPrivatePEMPath = request.GitHubAppPrivatePEMPath
 	case BrokerConnectionTypeGitLab:
 		if request.BrokerClientURL == "" {
 			return nil, errors.New("BrokerClientURL must be supplied for gitlab connection type")
@@ -877,6 +1490,136 @@ func buildBrokerConnectionRequestPayload(deploymentID string, request *BrokerCon
 		configuration.Required.BrokerClientURL = request.BrokerClientURL
 		configuration.Required.GitLabHostname = request.GitLabHostname
 		configuration.Required.GitLabToken = request.GitLabToken
+	case BrokerConnectionTypeGitLabCR:
+		if request.BrokerClientURL == "" {
+			return nil, errors.New("BrokerClientURL must be supplied for gitlab-cr connection type")
+		}
+		if request.CRAgentURL == "" {
+			return nil, errors.New("CRAgentURL must be supplied for gitlab-cr connection type")
+		}
+		if request.CRBase == "" {
+			return nil, errors.New("CRBase must be supplied for gitlab-cr connection type")
+		}
+		if request.CRPassword == "" {
+			return nil, errors.New("CRPassword must be supplied for gitlab-cr connection type")
+		}
+		if request.CRUsername == "" {
+			return nil, errors.New("CRUsername must be supplied for gitlab-cr connection type")
+		}
+		configuration.Required.BrokerClientURL = request.BrokerClientURL
+		configuration.Required.CRAgentURL = request.CRAgentURL
+		configuration.Required.CRBase = request.CRBase
+		configuration.Required.CRPassword = request.CRPassword
+		configuration.Required.CRUsername = request.CRUsername
+	case BrokerConnectionTypeGoogleArtifactCR:
+		if request.BrokerClientURL == "" {
+			return nil, errors.New("BrokerClientURL must be supplied for google-artifact-cr connection type")
+		}
+		if request.CRAgentURL == "" {
+			return nil, errors.New("CRAgentURL must be supplied for google-artifact-cr connection type")
+		}
+		if request.CRBase == "" {
+			return nil, errors.New("CRBase must be supplied for google-artifact-cr connection type")
+		}
+		if request.CRPassword == "" {
+			return nil, errors.New("CRPassword must be supplied for google-artifact-cr connection type")
+		}
+		if request.CRUsername == "" {
+			return nil, errors.New("CRUsername must be supplied for google-artifact-cr connection type")
+		}
+		configuration.Required.BrokerClientURL = request.BrokerClientURL
+		configuration.Required.CRAgentURL = request.CRAgentURL
+		configuration.Required.CRBase = request.CRBase
+		configuration.Required.CRPassword = request.CRPassword
+		configuration.Required.CRUsername = request.CRUsername
+	case BrokerConnectionTypeJira:
+		if request.JiraHostname == "" {
+			return nil, errors.New("JiraHostname must be supplied for jira connection type")
+		}
+		if request.JiraPAT == "" && request.JiraPassword == "" && request.JiraUsername == "" {
+			return nil, errors.New("JiraPAT, JiraPassword or JiraUsername must be supplied for jira connection type")
+		}
+		if request.JiraPAT != "" && request.JiraPassword != "" && request.JiraUsername != "" {
+			return nil, errors.New("JiraPAT, JiraPassword and JiraUsername must not be supplied together for jira connection type")
+		}
+		if request.JiraPAT != "" && (request.JiraPassword != "" || request.JiraUsername != "") {
+			return nil, errors.New("JiraPAT cannot be supplied together with JiraPassword and JiraUsername for jira connection type")
+		}
+		configuration.Required.JiraHostname = request.JiraHostname
+		if request.JiraPAT != "" {
+			configuration.Required.JiraPAT = request.JiraPAT
+		} else {
+			configuration.Required.JiraPassword = request.JiraPassword
+			configuration.Required.JiraUsername = request.JiraUsername
+		}
+	case BrokerConnectionTypeHarborCR:
+		if request.BrokerClientURL == "" {
+			return nil, errors.New("BrokerClientURL must be supplied for harbor-cr connection type")
+		}
+		if request.CRAgentURL == "" {
+			return nil, errors.New("CRAgentURL must be supplied for harbor-cr connection type")
+		}
+		if request.CRBase == "" {
+			return nil, errors.New("CRBase must be supplied for harbor-cr connection type")
+		}
+		if request.CRPassword == "" {
+			return nil, errors.New("CRPassword must be supplied for harbor-cr connection type")
+		}
+		if request.CRUsername == "" {
+			return nil, errors.New("CRUsername must be supplied for harbor-cr connection type")
+		}
+		configuration.Required.BrokerClientURL = request.BrokerClientURL
+		configuration.Required.CRAgentURL = request.CRAgentURL
+		configuration.Required.CRBase = request.CRBase
+		configuration.Required.CRPassword = request.CRPassword
+		configuration.Required.CRUsername = request.CRUsername
+	case BrokerConnectionTypeNexus:
+		if request.NexusBaseURL == "" {
+			return nil, errors.New("NexusBaseURL must be supplied for nexus connection type")
+		}
+		configuration.Required.NexusBaseURL = request.NexusBaseURL
+	case BrokerConnectionTypeNexusCR:
+		if request.BrokerClientURL == "" {
+			return nil, errors.New("BrokerClientURL must be supplied for nexus-cr connection type")
+		}
+		if request.CRAgentURL == "" {
+			return nil, errors.New("CRAgentURL must be supplied for nexus-cr connection type")
+		}
+		if request.CRBase == "" {
+			return nil, errors.New("CRBase must be supplied for nexus-cr connection type")
+		}
+		if request.CRPassword == "" {
+			return nil, errors.New("CRPassword must be supplied for nexus-cr connection type")
+		}
+		if request.CRUsername == "" {
+			return nil, errors.New("CRUsername must be supplied for nexus-cr connection type")
+		}
+		configuration.Required.BrokerClientURL = request.BrokerClientURL
+		configuration.Required.CRAgentURL = request.CRAgentURL
+		configuration.Required.CRBase = request.CRBase
+		configuration.Required.CRPassword = request.CRPassword
+		configuration.Required.CRUsername = request.CRUsername
+	case BrokerConnectionTypeQuayCR:
+		if request.BrokerClientURL == "" {
+			return nil, errors.New("BrokerClientURL must be supplied for quay-cr connection type")
+		}
+		if request.CRAgentURL == "" {
+			return nil, errors.New("CRAgentURL must be supplied for quay-cr connection type")
+		}
+		if request.CRBase == "" {
+			return nil, errors.New("CRBase must be supplied for quay-cr connection type")
+		}
+		if request.CRPassword == "" {
+			return nil, errors.New("CRPassword must be supplied for quay-cr connection type")
+		}
+		if request.CRUsername == "" {
+			return nil, errors.New("CRUsername must be supplied for quay-cr connection type")
+		}
+		configuration.Required.BrokerClientURL = request.BrokerClientURL
+		configuration.Required.CRAgentURL = request.CRAgentURL
+		configuration.Required.CRBase = request.CRBase
+		configuration.Required.CRPassword = request.CRPassword
+		configuration.Required.CRUsername = request.CRUsername
 	default:
 		return nil, fmt.Errorf("unsupported broker connection type: %s", request.Type)
 	}
