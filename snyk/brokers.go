@@ -9,12 +9,13 @@ import (
 )
 
 const (
-	brokersBasePath           = "brokers"
-	brokerDeploymentsBasePath = tenantsBasePath + "/%v/brokers/installs/%v/deployments"
-	brokerDeploymentBasePath  = brokerDeploymentsBasePath + "/%v"
-	brokerConnectionsBasePath = brokerDeploymentBasePath + "/connections"
-	brokerConnectionBasePath  = brokerConnectionsBasePath + "/%v"
-	brokersAPIVersion         = "2025-11-05"
+	brokersBasePath            = "brokers"
+	brokerDeploymentsBasePath  = tenantsBasePath + "/%v/brokers/installs/%v/deployments"
+	brokerDeploymentBasePath   = brokerDeploymentsBasePath + "/%v"
+	brokerConnectionsBasePath  = brokerDeploymentBasePath + "/connections"
+	brokerConnectionBasePath   = brokerConnectionsBasePath + "/%v"
+	brokerIntegrationsBasePath = tenantsBasePath + "/%v/brokers/connections/%v"
+	brokersAPIVersion          = "2025-11-05"
 )
 
 // BrokersServiceAPI is an interface for interacting with the brokers endpoints of the Snyk API.
@@ -77,20 +78,35 @@ type BrokersServiceAPI interface {
 	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-connections-connection_i
 	GetConnection(ctx context.Context, tenantID, appInstallID, deploymentID, connectionID string) (*BrokerConnection, *Response, error)
 
-	// CreateConnection
+	// CreateConnection makes a new broker connection.
 	//
 	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#post-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-connections
 	CreateConnection(ctx context.Context, tenantID, appInstallID, deploymentID string, createRequest *BrokerConnectionCreateOrUpdateRequest) (*BrokerConnection, *Response, error)
 
-	// UpdateConnection
+	// UpdateConnection changes a broker connection.
 	//
 	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#patch-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-connections-connection
 	UpdateConnection(ctx context.Context, tenantID, appInstallID, deploymentID, connectionID string, updateRequest *BrokerConnectionCreateOrUpdateRequest) (*BrokerConnection, *Response, error)
 
-	// DeleteConnection
+	// DeleteConnection removes a broker connection.
 	//
 	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#delete-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-connections-connectio
 	DeleteConnection(ctx context.Context, tenantID, appInstallID, deploymentID, connectionID string) (*Response, error)
+
+	// ListIntegrations provides a list of all integrations for a given broker connection.
+	//
+	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-connections-connection_id-integrations
+	ListIntegrations(ctx context.Context, tenantID, connectionID string) ([]BrokerIntegration, *Response, error)
+
+	// CreateIntegration creates a broker integration and configures to use the broker connection for a given org.
+	//
+	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#post-tenants-tenant_id-brokers-connections-connection_id-orgs-org_id-integration
+	CreateIntegration(ctx context.Context, tenantID, connectionID, orgID string, createRequest *BrokerIntegrationCreateRequest) (*BrokerIntegration, *Response, error)
+
+	// DeleteIntegration removes a broker integration.
+	//
+	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#delete-tenants-tenant_id-brokers-connections-connection_id-orgs-org_id-integrations-integration_id
+	DeleteIntegration(ctx context.Context, tenantID, connectionID, orgID, integrationID string) (*Response, error)
 }
 
 // BrokersService handles communication with the broker related methods of the Snyk API.
@@ -1630,4 +1646,137 @@ func buildBrokerConnectionRequestPayload(deploymentID string, request *BrokerCon
 	requestJSON.Data.Type = "broker_connection"
 
 	return requestJSON, nil
+}
+
+// BrokerIntegration represents a Snyk broker integration.
+//
+// See: https://docs.snyk.io/implementation-and-setup/enterprise-setup/snyk-broker/universal-broker/setting-up-and-integrating-your-universal-broker-connections
+type BrokerIntegration struct {
+	ID              string `json:"id"`                         // The BrokerIntegration identifier.
+	OrgID           string `json:"org_id"`                     // The ID of the organization having the BrokerIntegration configured.
+	Type            string `json:"type"`                       // The resource type `broker_integration`.
+	IntegrationType string `json:"integration_type,omitempty"` // The connection type.
+}
+
+type BrokerIntegrationCreateRequest struct {
+	IntegrationID string
+	Type          BrokerConnectionType
+}
+
+type brokerIntegrationRoot struct {
+	BrokerIntegration *BrokerIntegration `json:"data"`
+}
+
+type brokerIntegrationsRoot struct {
+	BrokerIntegrations []BrokerIntegration `json:"data"`
+	Links              *PaginatedLinks     `json:"links,omitempty"`
+}
+
+func (i BrokerIntegration) String() string { return Stringify(i) }
+
+func (s *BrokersService) ListIntegrations(ctx context.Context, tenantID, connectionID string) ([]BrokerIntegration, *Response, error) {
+	if tenantID == "" {
+		return nil, nil, errors.New("failed to list broker integrations: tenant id must be supplied")
+	}
+	if connectionID == "" {
+		return nil, nil, errors.New("failed to list broker integrations: connection id must be supplied")
+	}
+
+	opts := BaseOptions{Version: brokersAPIVersion}
+
+	path, err := addOptions(fmt.Sprintf(brokerIntegrationsBasePath+"/integrations", tenantID, connectionID), opts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.prepareRequest(ctx, http.MethodGet, s.client.restBaseURL, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(brokerIntegrationsRoot)
+	resp, err := s.client.do(ctx, req, &root)
+	if err != nil {
+		return nil, resp, err
+	}
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+
+	return root.BrokerIntegrations, resp, nil
+}
+
+func (s *BrokersService) CreateIntegration(ctx context.Context, tenantID, connectionID, orgID string, createRequest *BrokerIntegrationCreateRequest) (*BrokerIntegration, *Response, error) {
+	if tenantID == "" {
+		return nil, nil, errors.New("failed to create broker integration: tenant id must be supplied")
+	}
+	if connectionID == "" {
+		return nil, nil, errors.New("failed to create broker integration: connection id must be supplied")
+	}
+	if orgID == "" {
+		return nil, nil, errors.New("failed to create broker integration: org id must be supplied")
+	}
+	if createRequest == nil {
+		return nil, nil, errors.New("failed to create broker integration: payload must be supplied")
+	}
+
+	opts := BaseOptions{Version: brokersAPIVersion}
+	path, err := addOptions(fmt.Sprintf(brokerIntegrationsBasePath+"/orgs/%v/integration", tenantID, connectionID, orgID), opts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// inline jsonapi update payload to keep create function simple
+	var createRequestJSON struct {
+		Data struct {
+			IntegrationID string `json:"integration_id,omitempty"`
+			Type          string `json:"type"`
+		} `json:"data"`
+	}
+	if createRequest.IntegrationID != "" {
+		createRequestJSON.Data.IntegrationID = createRequest.IntegrationID
+	}
+	createRequestJSON.Data.Type = string(createRequest.Type)
+
+	req, err := s.client.prepareRequest(ctx, http.MethodPost, s.client.restBaseURL, path, createRequestJSON)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(brokerIntegrationRoot)
+	resp, err := s.client.do(ctx, req, &root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.BrokerIntegration, resp, nil
+}
+
+func (s *BrokersService) DeleteIntegration(ctx context.Context, tenantID, connectionID, orgID, integrationID string) (*Response, error) {
+	if tenantID == "" {
+		return nil, errors.New("failed to delete broker integration: tenant id must be supplied")
+	}
+	if connectionID == "" {
+		return nil, errors.New("failed to delete broker integration: connection id must be supplied")
+	}
+	if orgID == "" {
+		return nil, errors.New("failed to create delete integration: org id must be supplied")
+	}
+	if integrationID == "" {
+		return nil, errors.New("failed to create delete integration: integration id must be supplied")
+	}
+
+	opts := BaseOptions{Version: brokersAPIVersion}
+
+	path, err := addOptions(fmt.Sprintf(brokerIntegrationsBasePath+"/orgs/%v/integrations/%v", tenantID, connectionID, orgID, integrationID), opts)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := s.client.prepareRequest(ctx, http.MethodDelete, s.client.restBaseURL, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.client.do(ctx, req, nil)
 }

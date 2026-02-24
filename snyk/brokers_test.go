@@ -950,8 +950,163 @@ func TestBrokers_DeleteConnection_emptyConnectionID(t *testing.T) {
 	assert.ErrorContains(t, err, "connection id must be supplied")
 }
 
-func TestBrokers_buildBrokerConnectionRequestPayload(t *testing.T) {
+func TestBrokers_buildBrokerConnectionRequestPayload_emptyPayload(t *testing.T) {
 	_, err := buildBrokerConnectionRequestPayload("", nil)
 
 	assert.Error(t, err)
+}
+
+func TestBrokers_ListIntegrations(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/tenants/tenant-id/brokers/connections/connection-id/integrations", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		_, _ = fmt.Fprint(w, `
+{
+  "jsonapi": { "version": "1.0" },
+  "data": [
+    {
+      "org_id": "6c6b3b6d-24e5-4f70-9896-4a49609cd61a",
+      "id": "4ef2ac82-ebcf-4b6c-a39b-6fd27fe09506",
+      "integration_type": "github",
+      "type": "broker_integration"
+    }
+  ],
+  "links": {}
+}
+`)
+	})
+	expectedIntegrations := []BrokerIntegration{
+		{
+			ID:              "4ef2ac82-ebcf-4b6c-a39b-6fd27fe09506",
+			OrgID:           "6c6b3b6d-24e5-4f70-9896-4a49609cd61a",
+			Type:            "broker_integration",
+			IntegrationType: "github",
+		},
+	}
+
+	actualIntegrations, _, err := client.Brokers.ListIntegrations(ctx, "tenant-id", "connection-id")
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(actualIntegrations), "expect 1 broker integration")
+	assert.Equal(t, expectedIntegrations, actualIntegrations)
+}
+
+func TestBrokers_ListIntegrations_emptyTenantID(t *testing.T) {
+	_, _, err := client.Brokers.ListIntegrations(ctx, "", "connection-id")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "tenant id must be supplied")
+}
+
+func TestBrokers_ListIntegrations_emptyConnectionID(t *testing.T) {
+	_, _, err := client.Brokers.ListIntegrations(ctx, "tenant-id", "")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "connection id must be supplied")
+}
+
+func TestBrokers_CreateIntegration(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/tenants/tenant-id/brokers/connections/connection-id/orgs/org-id/integration", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		_, _ = fmt.Fprint(w, `
+{
+  "jsonapi": { "version": "1.0" },
+  "data": {
+    "id": "a9d79dc9-63c5-4b5d-ae5c-5c42bc2f3d38",
+    "type": "broker_connection",
+    "org_id": "6c6b3b6d-24e5-4f70-9896-4a49609cd61a"
+  },
+  "links": {}
+}
+`)
+	})
+	expectedIntegration := &BrokerIntegration{
+		ID:    "a9d79dc9-63c5-4b5d-ae5c-5c42bc2f3d38",
+		Type:  "broker_connection",
+		OrgID: "6c6b3b6d-24e5-4f70-9896-4a49609cd61a",
+	}
+
+	actualIntegration, _, err := client.Brokers.CreateIntegration(
+		ctx, "tenant-id", "connection-id", "org-id",
+		&BrokerIntegrationCreateRequest{
+			Type: "github",
+		},
+	)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedIntegration, actualIntegration)
+}
+
+func TestBrokers_CreateIntegration_tenantID(t *testing.T) {
+	_, _, err := client.Brokers.CreateIntegration(ctx, "", "connection-id", "org-id", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "tenant id must be supplied")
+}
+
+func TestBrokers_CreateIntegration_emptyConnectionID(t *testing.T) {
+	_, _, err := client.Brokers.CreateIntegration(ctx, "tenant-id", "", "org-id", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "connection id must be supplied")
+}
+
+func TestBrokers_CreateIntegration_emptyOrgID(t *testing.T) {
+	_, _, err := client.Brokers.CreateIntegration(ctx, "tenant-id", "connection-id", "", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "org id must be supplied")
+}
+
+func TestBrokers_CreateIntegration_emptyPayload(t *testing.T) {
+	_, _, err := client.Brokers.CreateIntegration(ctx, "tenant-id", "connection-id", "org-id", nil)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "payload must be supplied")
+}
+
+func TestBrokers_DeleteIntegration(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/tenants/tenant-id/brokers/connections/connection-id/orgs/org-id/integrations/integration-id", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodDelete, r.Method)
+	})
+
+	_, err := client.Brokers.DeleteIntegration(ctx, "tenant-id", "connection-id", "org-id", "integration-id")
+
+	assert.NoError(t, err)
+}
+
+func TestBrokers_DeleteIntegration_tenantID(t *testing.T) {
+	_, err := client.Brokers.DeleteIntegration(ctx, "", "connection-id", "org-id", "integration-id")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "tenant id must be supplied")
+}
+
+func TestBrokers_DeleteIntegration_emptyConnectionID(t *testing.T) {
+	_, err := client.Brokers.DeleteIntegration(ctx, "tenant-id", "", "org-id", "integration-id")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "connection id must be supplied")
+}
+
+func TestBrokers_DeleteIntegration_emptyOrgID(t *testing.T) {
+	_, err := client.Brokers.DeleteIntegration(ctx, "tenant-id", "connection-id", "", "integration-id")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "org id must be supplied")
+}
+
+func TestBrokers_DeleteIntegration_emptyIntegrationID(t *testing.T) {
+	_, err := client.Brokers.DeleteIntegration(ctx, "tenant-id", "connection-id", "org-id", "")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "integration id must be supplied")
 }
