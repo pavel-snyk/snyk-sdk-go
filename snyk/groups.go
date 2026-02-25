@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"iter"
 	"net/http"
 	"time"
 )
@@ -17,6 +18,22 @@ const (
 //
 // See: https://docs.snyk.io/snyk-api/reference/groups
 type GroupsServiceAPI interface {
+	// List gets a paginated list of all groups you are a member of.
+	//
+	// Note: Group attributes will contain only name. If you want to access full details
+	// of a group, use Get method.
+	//
+	// See: https://docs.snyk.io/snyk-api/reference/groups#get-groups
+	List(ctx context.Context, opts *ListOptions) ([]Group, *Response, error)
+
+	// All returns an iterator to paginate over all groups you are a member of.
+	//
+	// This method handles the pagination logic internally by calling List for each page.
+	// The return iterated can be used in a for...range loop to easily process all groups.
+	//
+	// Note: This function is experimental and its signature may change in a future release.
+	All(ctx context.Context, opts *ListOptions) (iter.Seq2[Group, *Response], func() error)
+
 	// Get provides the full details of an group.
 	//
 	// See: https://docs.snyk.io/snyk-api/reference/group#get-groups-group_id
@@ -49,11 +66,60 @@ type GroupRelationships struct {
 	Tenant *tenantRoot `json:"tenant,omitempty"`
 }
 
+type ListGroupsOptions struct {
+	ListOptions
+}
+
 type groupRoot struct {
 	Group *Group `json:"data,omitempty"`
 }
 
+type groupsRoot struct {
+	Groups []Group         `json:"data"`
+	Links  *PaginatedLinks `json:"links,omitempty"`
+}
+
 func (g Group) String() string { return Stringify(g) }
+
+func (s *GroupsService) List(ctx context.Context, opts *ListOptions) ([]Group, *Response, error) {
+	if opts == nil {
+		opts = &ListOptions{}
+	}
+	if opts.Version == "" {
+		opts.Version = groupsAPIVersion
+	}
+
+	path, err := addOptions(groupsBasePath, opts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.prepareRequest(ctx, http.MethodGet, s.client.restBaseURL, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(groupsRoot)
+	resp, err := s.client.do(ctx, req, &root)
+	if err != nil {
+		return nil, resp, err
+	}
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+
+	return root.Groups, resp, nil
+}
+
+func (s *GroupsService) All(ctx context.Context, opts *ListOptions) (iter.Seq2[Group, *Response], func() error) {
+	if opts == nil {
+		opts = &ListOptions{}
+	}
+	if opts.Version == "" {
+		opts.Version = groupsAPIVersion
+	}
+	return newPaginator[Group](ctx, s.client, s.client.restBaseURL, groupsBasePath, opts)
+}
 
 func (s *GroupsService) Get(ctx context.Context, groupID string) (*Group, *Response, error) {
 	if groupID == "" {
