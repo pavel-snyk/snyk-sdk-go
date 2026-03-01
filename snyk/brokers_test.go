@@ -64,6 +64,55 @@ func TestBrokers_ListDeployments_emptyAppInstallID(t *testing.T) {
 	assert.ErrorContains(t, err, "install id must be supplied")
 }
 
+func TestBrokers_ListDeploymentsForTenant(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/tenants/tenant-id/brokers/deployments", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		_, _ = fmt.Fprint(w, `
+{
+  "jsonapi": { "version": "1.0" },
+  "data": [
+    {
+      "id": "0779acb9-968e-4bff-abd7-94193e589028",
+      "type": "broker_deployment",
+      "attributes": {
+        "install_id": "216b7774-9198-4fcd-a525-bace50228e18",
+        "broker_app_installed_in_org_id": "6c6b3b6d-24e5-4f70-9896-4a49609cd61a",
+        "metadata": {
+          "region": "us-east-1"
+        }
+      }
+    }
+  ],
+  "links": {}
+}
+`)
+	})
+	expectedDeployments := []BrokerDeployment{{
+		ID:   "0779acb9-968e-4bff-abd7-94193e589028",
+		Type: "broker_deployment",
+		Attributes: &BrokerDeploymentAttributes{
+			AppInstallID: "216b7774-9198-4fcd-a525-bace50228e18",
+			OrgID:        "6c6b3b6d-24e5-4f70-9896-4a49609cd61a",
+			Metadata:     map[string]string{"region": "us-east-1"},
+		},
+	}}
+
+	actualDeployments, _, err := client.Brokers.ListDeploymentsForTenant(ctx, "tenant-id")
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedDeployments, actualDeployments)
+}
+
+func TestBrokers_ListDeploymentsForTenant_emptyTenantID(t *testing.T) {
+	_, _, err := client.Brokers.ListDeploymentsForTenant(ctx, "")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "tenant id must be supplied")
+}
+
 func TestBrokers_CreateDeployment(t *testing.T) {
 	setup()
 	defer teardown()

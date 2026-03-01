@@ -27,6 +27,11 @@ type BrokersServiceAPI interface {
 	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-installs-install_id-deployments
 	ListDeployments(ctx context.Context, tenantID, appInstallID string) ([]BrokerDeployment, *Response, error)
 
+	// ListDeploymentsForTenant provides a ist of broker deployments for the tenant.
+	//
+	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-deployments
+	ListDeploymentsForTenant(ctx context.Context, tenantID string) ([]BrokerDeployment, *Response, error)
+
 	// CreateDeployment makes a new broker deployment.
 	// "orgID" parameter in createRequest is the ID of organization where Universal Broker Snyk App is installed.
 	//
@@ -156,6 +161,35 @@ func (s *BrokersService) ListDeployments(ctx context.Context, tenantID, appInsta
 	opts := BaseOptions{Version: brokersAPIVersion}
 
 	path, err := addOptions(fmt.Sprintf("%v/%v/%v/installs/%v/deployments", tenantsBasePath, tenantID, brokersBasePath, appInstallID), opts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.prepareRequest(ctx, http.MethodGet, s.client.restBaseURL, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(brokerDeploymentsRoot)
+	resp, err := s.client.do(ctx, req, &root)
+	if err != nil {
+		return nil, resp, err
+	}
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+
+	return root.BrokerDeployments, resp, nil
+}
+
+func (s *BrokersService) ListDeploymentsForTenant(ctx context.Context, tenantID string) ([]BrokerDeployment, *Response, error) {
+	if tenantID == "" {
+		return nil, nil, errors.New("failed to list broker deployments: tenant id must be supplied")
+	}
+
+	opts := BaseOptions{Version: brokersAPIVersion}
+
+	path, err := addOptions(fmt.Sprintf("%v/%v/brokers/deployments", tenantsBasePath, tenantID), opts)
 	if err != nil {
 		return nil, nil, err
 	}
