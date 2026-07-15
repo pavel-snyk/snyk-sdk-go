@@ -86,3 +86,106 @@ func TestClient_NewClient_withUserAgent(t *testing.T) {
 	assert.NotNil(t, client)
 	assert.Equal(t, "test-user-agent", client.userAgent)
 }
+
+func TestClient_restPath(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		endpoint        string
+		version         string
+		opts            any
+		expectedPath    string
+		expectedQueries url.Values
+		errorExpected   bool
+	}{
+		"version-only": {
+			endpoint:        "projects",
+			version:         "2025-11-05",
+			expectedPath:    "projects",
+			expectedQueries: url.Values{"version": {"2025-11-05"}},
+		},
+		"typed-nil-options": {
+			endpoint:        "projects",
+			version:         "2025-11-05",
+			opts:            (*ListOptions)(nil),
+			expectedPath:    "projects",
+			expectedQueries: url.Values{"version": {"2025-11-05"}},
+		},
+		"list-options": {
+			endpoint:     "projects",
+			version:      "2025-11-05",
+			opts:         &ListOptions{StartingAfter: "cursor", Limit: 25},
+			expectedPath: "projects",
+			expectedQueries: url.Values{
+				"limit":          {"25"},
+				"starting_after": {"cursor"},
+				"version":        {"2025-11-05"},
+			},
+		},
+		"preserves-existing-query": {
+			endpoint:     "projects?expand=target&version=caller-value",
+			version:      "2025-11-05",
+			expectedPath: "projects",
+			expectedQueries: url.Values{
+				"expand":  {"target"},
+				"version": {"2025-11-05"},
+			},
+		},
+		"empty-version": {
+			endpoint:      "projects",
+			errorExpected: true,
+		},
+		"malformed-endpoint": {
+			endpoint:      "://projects",
+			version:       "2025-11-05",
+			errorExpected: true,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			path, err := restPath(test.endpoint, test.version, test.opts)
+			if test.errorExpected {
+				assert.Error(t, err)
+				return
+			}
+
+			if !assert.NoError(t, err) {
+				return
+			}
+			parsedPath, err := url.Parse(path)
+			if !assert.NoError(t, err) {
+				return
+			}
+			assert.Equal(t, test.expectedPath, parsedPath.Path)
+			assert.Equal(t, test.expectedQueries, parsedPath.Query())
+		})
+	}
+}
+
+func TestClient_newResponse_populatesServedAPIVersion(t *testing.T) {
+	t.Parallel()
+
+	header := make(http.Header)
+	header.Set(headerSnykVersionServed, "2023-01-30~beta")
+	httpResponse := &http.Response{Header: header}
+
+	response := newResponse(httpResponse)
+	errorResponse := &ErrorResponse{Response: response}
+
+	assert.Equal(t, "2023-01-30~beta", response.ServedAPIVersion)
+	assert.Equal(t, response.ServedAPIVersion, errorResponse.Response.ServedAPIVersion)
+}
+
+func TestClient_newResponse_withoutServedAPIVersion(t *testing.T) {
+	t.Parallel()
+
+	response := newResponse(&http.Response{Header: make(http.Header)})
+
+	assert.Empty(t, response.ServedAPIVersion)
+}
+
+func assertRequestAPIVersion(t *testing.T, r *http.Request, expected string) {
+	t.Helper()
+	assert.Equal(t, []string{expected}, r.URL.Query()["version"])
+}

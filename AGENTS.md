@@ -58,8 +58,9 @@ them in a PR.
   version-override `ClientOption`. (Snyk versions per-endpoint, not
   per-service or globally — a single override can't express that
   correctly, so don't add one that pretends to.)
-- The SDK surfaces server-provided facts (`SnykRequestID`, `RetryAfter`,
-  `Sunset`) as struct fields. It never acts on them automatically.
+- The SDK surfaces server-provided facts (`SnykRequestID`,
+  `ServedAPIVersion`, `RetryAfter`, `Sunset`) as struct fields. It never
+  acts on them automatically.
 
 ## 4. Conventions
 
@@ -91,6 +92,9 @@ Follow these steps in order. Each step has a known failure mode if skipped.
 
 3. **Declare the version constant** at the top of the file:
    `const xAPIVersion = "<version-from-step-1>"`.
+   Build REST request paths with
+   `restPath(endpoint, xAPIVersion, opts)`; never expose the version on
+   public option structs.
 
 4. **Define `XServiceAPI` interface** with all public methods, each with
    a doc comment linking to the Snyk API docs page for that endpoint.
@@ -102,5 +106,10 @@ Follow these steps in order. Each step has a known failure mode if skipped.
    - Add the field to the `Client` struct: `X XServiceAPI`
    - Assign it in `NewClient`: `c.X = (*XService)(&c.common)`
 
-   Forgetting this step means the service compiles but is unreachable
-   from `client.X`.
+Forgetting this step means the service compiles but is unreachable
+from `client.X`.
+
+## 6. Verification
+
+- Run `make test` for the full test suite and coverage report.
+- Run `make lint` before considering implementation work complete.

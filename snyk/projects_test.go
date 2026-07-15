@@ -14,6 +14,7 @@ func TestProject_List(t *testing.T) {
 	defer teardown()
 
 	mux.HandleFunc("/orgs/org-id/projects", func(w http.ResponseWriter, r *http.Request) {
+		assertRequestAPIVersion(t, r, projectsAPIVersion)
 		_, _ = fmt.Fprint(w, `
 {
   "jsonapi": { "version": "1.0" },
@@ -95,6 +96,7 @@ func TestProject_Get(t *testing.T) {
 	defer teardown()
 
 	mux.HandleFunc("/orgs/org-id/projects/project-id", func(w http.ResponseWriter, r *http.Request) {
+		assertRequestAPIVersion(t, r, projectsAPIVersion)
 		_, _ = fmt.Fprint(w, `
 {
   "jsonapi": { "version": "1.0" },

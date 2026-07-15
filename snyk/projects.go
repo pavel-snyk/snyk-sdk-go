@@ -75,9 +75,8 @@ func (s *ProjectsService) List(ctx context.Context, orgID string, opts *ListProj
 	if opts == nil {
 		opts = &ListProjectsOptions{ListOptions: ListOptions{Limit: 100}}
 	}
-	opts.Version = projectsAPIVersion
 
-	path, err := addOptions(fmt.Sprintf(projectsBaseBase, orgID), opts)
+	path, err := restPath(fmt.Sprintf(projectsBaseBase, orgID), projectsAPIVersion, opts)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -107,9 +106,7 @@ func (s *ProjectsService) Get(ctx context.Context, orgID, projectID string) (*Pr
 		return nil, nil, errors.New("projectID must be supplied")
 	}
 
-	opts := BaseOptions{Version: projectsAPIVersion}
-
-	path, err := addOptions(fmt.Sprintf(projectsBaseBase+"/%v", orgID, projectID), opts)
+	path, err := restPath(fmt.Sprintf(projectsBaseBase+"/%v", orgID, projectID), projectsAPIVersion, nil)
 	if err != nil {
 		return nil, nil, err
 	}

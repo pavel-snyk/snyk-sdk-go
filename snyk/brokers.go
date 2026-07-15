@@ -158,9 +158,7 @@ func (s *BrokersService) ListDeployments(ctx context.Context, tenantID, appInsta
 		return nil, nil, errors.New("failed to list broker deployments: app install id must be supplied")
 	}
 
-	opts := BaseOptions{Version: brokersAPIVersion}
-
-	path, err := addOptions(fmt.Sprintf("%v/%v/%v/installs/%v/deployments", tenantsBasePath, tenantID, brokersBasePath, appInstallID), opts)
+	path, err := restPath(fmt.Sprintf("%v/%v/%v/installs/%v/deployments", tenantsBasePath, tenantID, brokersBasePath, appInstallID), brokersAPIVersion, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -187,9 +185,7 @@ func (s *BrokersService) ListDeploymentsForTenant(ctx context.Context, tenantID 
 		return nil, nil, errors.New("failed to list broker deployments: tenant id must be supplied")
 	}
 
-	opts := BaseOptions{Version: brokersAPIVersion}
-
-	path, err := addOptions(fmt.Sprintf("%v/%v/brokers/deployments", tenantsBasePath, tenantID), opts)
+	path, err := restPath(fmt.Sprintf("%v/%v/brokers/deployments", tenantsBasePath, tenantID), brokersAPIVersion, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -222,9 +218,7 @@ func (s *BrokersService) CreateDeployment(ctx context.Context, tenantID, appInst
 		return nil, nil, errors.New("failed to create broker deployment: payload must be supplied")
 	}
 
-	opts := BaseOptions{Version: brokersAPIVersion}
-
-	path, err := addOptions(fmt.Sprintf("%v/%v/%v/installs/%v/deployments", tenantsBasePath, tenantID, brokersBasePath, appInstallID), opts)
+	path, err := restPath(fmt.Sprintf("%v/%v/%v/installs/%v/deployments", tenantsBasePath, tenantID, brokersBasePath, appInstallID), brokersAPIVersion, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -275,9 +269,7 @@ func (s *BrokersService) UpdateDeployment(ctx context.Context, tenantID, appInst
 		return nil, nil, errors.New("failed to update broker deployment: payload must be supplied")
 	}
 
-	opts := BaseOptions{Version: brokersAPIVersion}
-
-	path, err := addOptions(fmt.Sprintf("%v/%v/%v/installs/%v/deployments/%v", tenantsBasePath, tenantID, brokersBasePath, appInstallID, deploymentID), opts)
+	path, err := restPath(fmt.Sprintf("%v/%v/%v/installs/%v/deployments/%v", tenantsBasePath, tenantID, brokersBasePath, appInstallID, deploymentID), brokersAPIVersion, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -327,9 +319,7 @@ func (s *BrokersService) DeleteDeployment(ctx context.Context, tenantID, appInst
 		return nil, errors.New("failed to delete broker deployment: id must be supplied")
 	}
 
-	opts := BaseOptions{Version: brokersAPIVersion}
-
-	path, err := addOptions(fmt.Sprintf("%v/%v/%v/installs/%v/deployments/%v", tenantsBasePath, tenantID, brokersBasePath, appInstallID, deploymentID), opts)
+	path, err := restPath(fmt.Sprintf("%v/%v/%v/installs/%v/deployments/%v", tenantsBasePath, tenantID, brokersBasePath, appInstallID, deploymentID), brokersAPIVersion, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -386,9 +376,7 @@ func (s *BrokersService) ListDeploymentCredentials(ctx context.Context, tenantID
 		return nil, nil, errors.New("failed to list broker deployment credentials: deployment id must be supplied")
 	}
 
-	opts := BaseOptions{Version: brokersAPIVersion}
-
-	path, err := addOptions(fmt.Sprintf("%v/%v/%v/installs/%v/deployments/%v/credentials", tenantsBasePath, tenantID, brokersBasePath, appInstallID, deploymentID), opts)
+	path, err := restPath(fmt.Sprintf("%v/%v/%v/installs/%v/deployments/%v/credentials", tenantsBasePath, tenantID, brokersBasePath, appInstallID, deploymentID), brokersAPIVersion, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -424,9 +412,7 @@ func (s *BrokersService) GetDeploymentCredential(ctx context.Context, tenantID, 
 		return nil, nil, errors.New("failed to get broker deployment credential: credential id must be supplied")
 	}
 
-	opts := BaseOptions{Version: brokersAPIVersion}
-
-	path, err := addOptions(fmt.Sprintf("%v/%v/%v/installs/%v/deployments/%v/credentials/%v", tenantsBasePath, tenantID, brokersBasePath, appInstallID, deploymentID, credentialID), opts)
+	path, err := restPath(fmt.Sprintf("%v/%v/%v/installs/%v/deployments/%v/credentials/%v", tenantsBasePath, tenantID, brokersBasePath, appInstallID, deploymentID, credentialID), brokersAPIVersion, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -459,9 +445,7 @@ func (s *BrokersService) CreateDeploymentCredential(ctx context.Context, tenantI
 		return nil, nil, errors.New("failed to create broker deployment credentials: payload must be supplied")
 	}
 
-	opts := BaseOptions{Version: brokersAPIVersion}
-
-	path, err := addOptions(fmt.Sprintf("%v/%v/%v/installs/%v/deployments/%v/credentials", tenantsBasePath, tenantID, brokersBasePath, appInstallID, deploymentID), opts)
+	path, err := restPath(fmt.Sprintf("%v/%v/%v/installs/%v/deployments/%v/credentials", tenantsBasePath, tenantID, brokersBasePath, appInstallID, deploymentID), brokersAPIVersion, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -516,9 +500,7 @@ func (s *BrokersService) UpdateDeploymentCredential(ctx context.Context, tenantI
 		return nil, nil, errors.New("failed to update broker deployment credential: payload must be supplied")
 	}
 
-	opts := BaseOptions{Version: brokersAPIVersion}
-
-	path, err := addOptions(fmt.Sprintf("%v/%v/%v/installs/%v/deployments/%v/credentials/%v", tenantsBasePath, tenantID, brokersBasePath, appInstallID, deploymentID, credentialID), opts)
+	path, err := restPath(fmt.Sprintf("%v/%v/%v/installs/%v/deployments/%v/credentials/%v", tenantsBasePath, tenantID, brokersBasePath, appInstallID, deploymentID, credentialID), brokersAPIVersion, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -567,9 +549,7 @@ func (s *BrokersService) DeleteDeploymentCredential(ctx context.Context, tenantI
 		return nil, errors.New("failed to delete broker deployment credential: credential id must be supplied")
 	}
 
-	opts := BaseOptions{Version: brokersAPIVersion}
-
-	path, err := addOptions(fmt.Sprintf("%v/%v/%v/installs/%v/deployments/%v/credentials/%v", tenantsBasePath, tenantID, brokersBasePath, appInstallID, deploymentID, credentialID), opts)
+	path, err := restPath(fmt.Sprintf("%v/%v/%v/installs/%v/deployments/%v/credentials/%v", tenantsBasePath, tenantID, brokersBasePath, appInstallID, deploymentID, credentialID), brokersAPIVersion, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1025,9 +1005,7 @@ func (s *BrokersService) ListConnections(ctx context.Context, tenantID, appInsta
 		return nil, nil, errors.New("failed to list broker connections: deployment id must be supplied")
 	}
 
-	opts := BaseOptions{Version: brokersAPIVersion}
-
-	path, err := addOptions(fmt.Sprintf(brokerConnectionsBasePath, tenantID, appInstallID, deploymentID), opts)
+	path, err := restPath(fmt.Sprintf(brokerConnectionsBasePath, tenantID, appInstallID, deploymentID), brokersAPIVersion, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1063,9 +1041,7 @@ func (s *BrokersService) GetConnection(ctx context.Context, tenantID, appInstall
 		return nil, nil, errors.New("failed to get broker connection: connection id must be supplied")
 	}
 
-	opts := BaseOptions{Version: brokersAPIVersion}
-
-	path, err := addOptions(fmt.Sprintf(brokerConnectionBasePath, tenantID, appInstallID, deploymentID, connectionID), opts)
+	path, err := restPath(fmt.Sprintf(brokerConnectionBasePath, tenantID, appInstallID, deploymentID, connectionID), brokersAPIVersion, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1098,9 +1074,7 @@ func (s *BrokersService) CreateConnection(ctx context.Context, tenantID, appInst
 		return nil, nil, errors.New("failed to create broker connection: payload must be supplied")
 	}
 
-	opts := BaseOptions{Version: brokersAPIVersion}
-
-	path, err := addOptions(fmt.Sprintf(brokerConnectionsBasePath, tenantID, appInstallID, deploymentID), opts)
+	path, err := restPath(fmt.Sprintf(brokerConnectionsBasePath, tenantID, appInstallID, deploymentID), brokersAPIVersion, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1141,9 +1115,7 @@ func (s *BrokersService) UpdateConnection(ctx context.Context, tenantID, appInst
 		return nil, nil, errors.New("failed to update broker connection: payload must be supplied")
 	}
 
-	opts := BaseOptions{Version: brokersAPIVersion}
-
-	path, err := addOptions(fmt.Sprintf(brokerConnectionBasePath, tenantID, appInstallID, deploymentID, connectionID), opts)
+	path, err := restPath(fmt.Sprintf(brokerConnectionBasePath, tenantID, appInstallID, deploymentID, connectionID), brokersAPIVersion, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1181,9 +1153,7 @@ func (s *BrokersService) DeleteConnection(ctx context.Context, tenantID, appInst
 		return nil, errors.New("failed to delete broker connection: connection id must be supplied")
 	}
 
-	opts := BaseOptions{Version: brokersAPIVersion}
-
-	path, err := addOptions(fmt.Sprintf(brokerConnectionBasePath, tenantID, appInstallID, deploymentID, connectionID), opts)
+	path, err := restPath(fmt.Sprintf(brokerConnectionBasePath, tenantID, appInstallID, deploymentID, connectionID), brokersAPIVersion, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1716,9 +1686,7 @@ func (s *BrokersService) ListIntegrations(ctx context.Context, tenantID, connect
 		return nil, nil, errors.New("failed to list broker integrations: connection id must be supplied")
 	}
 
-	opts := BaseOptions{Version: brokersAPIVersion}
-
-	path, err := addOptions(fmt.Sprintf(brokerIntegrationsBasePath+"/integrations", tenantID, connectionID), opts)
+	path, err := restPath(fmt.Sprintf(brokerIntegrationsBasePath+"/integrations", tenantID, connectionID), brokersAPIVersion, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1754,8 +1722,7 @@ func (s *BrokersService) CreateIntegration(ctx context.Context, tenantID, connec
 		return nil, nil, errors.New("failed to create broker integration: payload must be supplied")
 	}
 
-	opts := BaseOptions{Version: brokersAPIVersion}
-	path, err := addOptions(fmt.Sprintf(brokerIntegrationsBasePath+"/orgs/%v/integration", tenantID, connectionID, orgID), opts)
+	path, err := restPath(fmt.Sprintf(brokerIntegrationsBasePath+"/orgs/%v/integration", tenantID, connectionID, orgID), brokersAPIVersion, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1800,9 +1767,7 @@ func (s *BrokersService) DeleteIntegration(ctx context.Context, tenantID, connec
 		return nil, errors.New("failed to create delete integration: integration id must be supplied")
 	}
 
-	opts := BaseOptions{Version: brokersAPIVersion}
-
-	path, err := addOptions(fmt.Sprintf(brokerIntegrationsBasePath+"/orgs/%v/integrations/%v", tenantID, connectionID, orgID, integrationID), opts)
+	path, err := restPath(fmt.Sprintf(brokerIntegrationsBasePath+"/orgs/%v/integrations/%v", tenantID, connectionID, orgID, integrationID), brokersAPIVersion, nil)
 	if err != nil {
 		return nil, err
 	}

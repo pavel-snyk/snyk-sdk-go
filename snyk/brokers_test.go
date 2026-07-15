@@ -14,6 +14,7 @@ func TestBrokers_ListDeployments(t *testing.T) {
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method)
+		assertRequestAPIVersion(t, r, brokersAPIVersion)
 		_, _ = fmt.Fprint(w, `
 {
   "jsonapi": { "version": "1.0" },
@@ -70,6 +71,7 @@ func TestBrokers_ListDeploymentsForTenant(t *testing.T) {
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/deployments", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method)
+		assertRequestAPIVersion(t, r, brokersAPIVersion)
 		_, _ = fmt.Fprint(w, `
 {
   "jsonapi": { "version": "1.0" },
@@ -119,6 +121,7 @@ func TestBrokers_CreateDeployment(t *testing.T) {
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodPost, r.Method)
+		assertRequestAPIVersion(t, r, brokersAPIVersion)
 		_, _ = fmt.Fprint(w, `
 {
   "jsonapi": { "version": "1.0" },
@@ -180,6 +183,7 @@ func TestBrokers_UpdateDeployment(t *testing.T) {
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodPatch, r.Method)
+		assertRequestAPIVersion(t, r, brokersAPIVersion)
 		_, _ = fmt.Fprint(w, `
 {
   "jsonapi": { "version": "1.0" },
@@ -248,6 +252,7 @@ func TestBrokers_DeleteDeployment(t *testing.T) {
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodDelete, r.Method)
+		assertRequestAPIVersion(t, r, brokersAPIVersion)
 	})
 
 	_, err := client.Brokers.DeleteDeployment(ctx, "tenant-id", "install-id", "deployment-id")
@@ -282,6 +287,7 @@ func TestBrokers_ListDeploymentCredentials(t *testing.T) {
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/credentials", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method)
+		assertRequestAPIVersion(t, r, brokersAPIVersion)
 		_, _ = fmt.Fprint(w, `
 {
   "jsonapi": { "version": "1.0" },
@@ -368,6 +374,7 @@ func TestBrokers_GetDeploymentCredential(t *testing.T) {
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/credentials/credential-id", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method)
+		assertRequestAPIVersion(t, r, brokersAPIVersion)
 		_, _ = fmt.Fprint(w, `
 {
   "jsonapi": { "version": "1.0" },
@@ -439,6 +446,7 @@ func TestBrokers_CreateDeploymentCredential(t *testing.T) {
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/credentials", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodPost, r.Method)
+		assertRequestAPIVersion(t, r, brokersAPIVersion)
 		_, _ = fmt.Fprint(w, `
 {
   "jsonapi": { "version": "1.0" },
@@ -515,6 +523,7 @@ func TestBrokers_UpdateDeploymentCredential(t *testing.T) {
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/credentials/credential-id", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodPatch, r.Method)
+		assertRequestAPIVersion(t, r, brokersAPIVersion)
 		_, _ = fmt.Fprint(w, `
 {
   "jsonapi": { "version": "1.0" },
@@ -596,6 +605,7 @@ func TestBrokers_DeleteDeploymentCredential(t *testing.T) {
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/credentials/credential-id", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodDelete, r.Method)
+		assertRequestAPIVersion(t, r, brokersAPIVersion)
 	})
 
 	_, err := client.Brokers.DeleteDeploymentCredential(ctx, "tenant-id", "install-id", "deployment-id", "credential-id")
@@ -637,6 +647,7 @@ func TestBrokers_ListConnections(t *testing.T) {
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/connections", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method)
+		assertRequestAPIVersion(t, r, brokersAPIVersion)
 		_, _ = fmt.Fprint(w, `
 {
   "jsonapi": { "version": "1.0" },
@@ -711,6 +722,7 @@ func TestBrokers_GetConnection(t *testing.T) {
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/connections/connection-id", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method)
+		assertRequestAPIVersion(t, r, brokersAPIVersion)
 		_, _ = fmt.Fprint(w, `
 {
   "jsonapi": { "version": "1.0" },
@@ -785,6 +797,7 @@ func TestBrokers_CreateConnection(t *testing.T) {
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/connections", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodPost, r.Method)
+		assertRequestAPIVersion(t, r, brokersAPIVersion)
 		_, _ = fmt.Fprint(w, `
 {
   "jsonapi": { "version": "1.0" },
@@ -871,6 +884,7 @@ func TestBrokers_UpdateConnection(t *testing.T) {
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/connections/connection-id", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodPatch, r.Method)
+		assertRequestAPIVersion(t, r, brokersAPIVersion)
 		_, _ = fmt.Fprint(w, `
 {
   "jsonapi": { "version": "1.0" },
@@ -964,6 +978,7 @@ func TestBrokers_DeleteConnection(t *testing.T) {
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/connections/connection-id", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodDelete, r.Method)
+		assertRequestAPIVersion(t, r, brokersAPIVersion)
 	})
 
 	_, err := client.Brokers.DeleteConnection(ctx, "tenant-id", "install-id", "deployment-id", "connection-id")
@@ -1011,6 +1026,7 @@ func TestBrokers_ListIntegrations(t *testing.T) {
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/connections/connection-id/integrations", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method)
+		assertRequestAPIVersion(t, r, brokersAPIVersion)
 		_, _ = fmt.Fprint(w, `
 {
   "jsonapi": { "version": "1.0" },
@@ -1062,6 +1078,7 @@ func TestBrokers_CreateIntegration(t *testing.T) {
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/connections/connection-id/orgs/org-id/integration", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodPost, r.Method)
+		assertRequestAPIVersion(t, r, brokersAPIVersion)
 		_, _ = fmt.Fprint(w, `
 {
   "jsonapi": { "version": "1.0" },
@@ -1125,6 +1142,7 @@ func TestBrokers_DeleteIntegration(t *testing.T) {
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/connections/connection-id/orgs/org-id/integrations/integration-id", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodDelete, r.Method)
+		assertRequestAPIVersion(t, r, brokersAPIVersion)
 	})
 
 	_, err := client.Brokers.DeleteIntegration(ctx, "tenant-id", "connection-id", "org-id", "integration-id")

@@ -103,9 +103,8 @@ func (s *AppsService) ListAppInstallsForOrg(ctx context.Context, orgID string, o
 	if opts == nil {
 		opts = &ListAppInstallOptions{Expand: "app"}
 	}
-	opts.Version = appsAPIVersion
 
-	path, err := addOptions(fmt.Sprintf("orgs/%v/%v/installs", orgID, appsBasePath), opts)
+	path, err := restPath(fmt.Sprintf("orgs/%v/%v/installs", orgID, appsBasePath), appsAPIVersion, opts)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -135,8 +134,7 @@ func (s *AppsService) CreateAppInstallForOrg(ctx context.Context, orgID, appID s
 		return nil, nil, errors.New("failed to create app install for org: app id must be supplied")
 	}
 
-	opts := &ListOptions{BaseOptions: BaseOptions{Version: appsAPIVersion}}
-	path, err := addOptions(fmt.Sprintf("orgs/%v/%v/installs", orgID, appsBasePath), opts)
+	path, err := restPath(fmt.Sprintf("orgs/%v/%v/installs", orgID, appsBasePath), appsAPIVersion, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -180,8 +178,7 @@ func (s *AppsService) DeleteAppInstallFromOrg(ctx context.Context, orgID, appIns
 		return nil, errors.New("failed to delete app install for org: app install id must be supplied")
 	}
 
-	opts := &ListOptions{BaseOptions: BaseOptions{Version: appsAPIVersion}}
-	path, err := addOptions(fmt.Sprintf("orgs/%v/%v/installs/%v", orgID, appsBasePath, appInstallID), opts)
+	path, err := restPath(fmt.Sprintf("orgs/%v/%v/installs/%v", orgID, appsBasePath, appInstallID), appsAPIVersion, nil)
 	if err != nil {
 		return nil, err
 	}
