@@ -37,6 +37,63 @@ func teardown() {
 	server.Close()
 }
 
+func TestClient_Regions(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		expected Region
+	}{
+		{
+			name: "SNYK-US-01",
+			expected: Region{
+				Alias:       "SNYK-US-01",
+				AppBaseURL:  "https://app.snyk.io/",
+				RESTBaseURL: "https://api.snyk.io/rest/",
+				V1BaseURL:   "https://api.snyk.io/v1/",
+			},
+		},
+		{
+			name: "SNYK-US-02",
+			expected: Region{
+				Alias:       "SNYK-US-02",
+				AppBaseURL:  "https://app.us.snyk.io/",
+				RESTBaseURL: "https://api.us.snyk.io/rest/",
+				V1BaseURL:   "https://api.us.snyk.io/v1/",
+			},
+		},
+		{
+			name: "SNYK-EU-01",
+			expected: Region{
+				Alias:       "SNYK-EU-01",
+				AppBaseURL:  "https://app.eu.snyk.io/",
+				RESTBaseURL: "https://api.eu.snyk.io/rest/",
+				V1BaseURL:   "https://api.eu.snyk.io/v1/",
+			},
+		},
+		{
+			name: "SNYK-AU-01",
+			expected: Region{
+				Alias:       "SNYK-AU-01",
+				AppBaseURL:  "https://app.au.snyk.io/",
+				RESTBaseURL: "https://api.au.snyk.io/rest/",
+				V1BaseURL:   "https://api.au.snyk.io/v1/",
+			},
+		},
+	}
+
+	actualRegions := Regions()
+	if !assert.Len(t, actualRegions, len(tests)) {
+		return
+	}
+
+	for i, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expected, actualRegions[i])
+		})
+	}
+}
+
 func TestClient_NewClient_defaults(t *testing.T) {
 	client, err := NewClient("auth-token")
 
