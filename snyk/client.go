@@ -77,7 +77,7 @@ var regions = []Region{
 	{
 		Alias:       "SNYK-EU-01",
 		AppBaseURL:  "https://app.eu.snyk.io/",
-		RESTBaseURL: "https://app.eu.snyk.io/rest/",
+		RESTBaseURL: "https://api.eu.snyk.io/rest/",
 		V1BaseURL:   "https://api.eu.snyk.io/v1/",
 	},
 	{
