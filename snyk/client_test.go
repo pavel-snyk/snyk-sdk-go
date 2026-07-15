@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -83,9 +84,7 @@ func TestClient_Regions(t *testing.T) {
 	}
 
 	actualRegions := Regions()
-	if !assert.Len(t, actualRegions, len(tests)) {
-		return
-	}
+	require.Len(t, actualRegions, len(tests))
 
 	for i, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

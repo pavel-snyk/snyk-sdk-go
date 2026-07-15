@@ -24,7 +24,11 @@ go get github.com/pavel-snyk/snyk-sdk-go/v2
 ## Usage
 
 ```go
-import "github.com/pavel-snyk/snyk-sdk-go/v2"
+import (
+	"log"
+
+	"github.com/pavel-snyk/snyk-sdk-go/v2/snyk"
+)
 ```
 
 Create a new Snyk client, then use the exposed services to access different
@@ -37,5 +41,8 @@ in your General Account Settings on https://snyk.io/account/ after you register
 with Snyk and log in. See [Authentication for API](https://docs.snyk.io/snyk-api-info/authentication-for-api).
 
 ```go
-client := snyk.NewClient("your-api-token")
+client, err := snyk.NewClient("your-api-token")
+if err != nil {
+	log.Fatal(err)
+}
 ```
