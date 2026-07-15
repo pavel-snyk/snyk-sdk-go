@@ -101,11 +101,8 @@ func (s *OrgsService) ListAccessibleOrgs(ctx context.Context, opts *ListOrganiza
 	if opts == nil {
 		opts = &ListOrganizationOptions{}
 	}
-	if opts.Version == "" {
-		opts.Version = orgsAPIVersion
-	}
 
-	path, err := addOptions(orgsBasePath, opts)
+	path, err := restPath(orgsBasePath, orgsAPIVersion, opts)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -131,10 +128,7 @@ func (s *OrgsService) AllAccessibleOrgs(ctx context.Context, opts *ListOptions) 
 	if opts == nil {
 		opts = &ListOptions{}
 	}
-	if opts.Version == "" {
-		opts.Version = orgsAPIVersion
-	}
-	return newPaginator[Organization](ctx, s.client, s.client.restBaseURL, orgsBasePath, opts)
+	return newPaginator[Organization](ctx, s.client, s.client.restBaseURL, orgsBasePath, orgsAPIVersion, opts)
 }
 
 func (s *OrgsService) Get(ctx context.Context, orgID string, opts *GetOrganizationOptions) (*Organization, *Response, error) {
@@ -145,9 +139,8 @@ func (s *OrgsService) Get(ctx context.Context, orgID string, opts *GetOrganizati
 	if opts == nil {
 		opts = &GetOrganizationOptions{Expand: "tenant"}
 	}
-	opts.Version = orgsAPIVersion
 
-	path, err := addOptions(fmt.Sprintf("%v/%v", orgsBasePath, orgID), opts)
+	path, err := restPath(fmt.Sprintf("%v/%v", orgsBasePath, orgID), orgsAPIVersion, opts)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -174,8 +167,7 @@ func (s *OrgsService) Update(ctx context.Context, orgID string, updateRequest *O
 		return nil, nil, errors.New("failed to update org: payload must be supplied")
 	}
 
-	opts := &ListOptions{BaseOptions: BaseOptions{Version: orgsAPIVersion}}
-	path, err := addOptions(fmt.Sprintf("%v/%v", orgsBasePath, orgID), opts)
+	path, err := restPath(fmt.Sprintf("%v/%v", orgsBasePath, orgID), orgsAPIVersion, nil)
 	if err != nil {
 		return nil, nil, err
 	}

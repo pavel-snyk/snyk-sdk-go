@@ -85,11 +85,8 @@ func (s *GroupsService) List(ctx context.Context, opts *ListOptions) ([]Group, *
 	if opts == nil {
 		opts = &ListOptions{}
 	}
-	if opts.Version == "" {
-		opts.Version = groupsAPIVersion
-	}
 
-	path, err := addOptions(groupsBasePath, opts)
+	path, err := restPath(groupsBasePath, groupsAPIVersion, opts)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -115,10 +112,7 @@ func (s *GroupsService) All(ctx context.Context, opts *ListOptions) (iter.Seq2[G
 	if opts == nil {
 		opts = &ListOptions{}
 	}
-	if opts.Version == "" {
-		opts.Version = groupsAPIVersion
-	}
-	return newPaginator[Group](ctx, s.client, s.client.restBaseURL, groupsBasePath, opts)
+	return newPaginator[Group](ctx, s.client, s.client.restBaseURL, groupsBasePath, groupsAPIVersion, opts)
 }
 
 func (s *GroupsService) Get(ctx context.Context, groupID string) (*Group, *Response, error) {
@@ -126,9 +120,7 @@ func (s *GroupsService) Get(ctx context.Context, groupID string) (*Group, *Respo
 		return nil, nil, errors.New("failed to get org: id must be supplied")
 	}
 
-	opts := &BaseOptions{Version: groupsAPIVersion}
-
-	path, err := addOptions(fmt.Sprintf("%v/%v", groupsBasePath, groupID), opts)
+	path, err := restPath(fmt.Sprintf("%v/%v", groupsBasePath, groupID), groupsAPIVersion, nil)
 	if err != nil {
 		return nil, nil, err
 	}

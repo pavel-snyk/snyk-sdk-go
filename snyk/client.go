@@ -24,7 +24,8 @@ const (
 	restAPIMediaType = "application/vnd.api+json"
 	defaultUserAgent = "snyk-sdk-go/" + libraryVersion + " (+https://github.com/pavel-snyk/snyk-sdk-go)"
 
-	headerSnykRequestID = "snyk-request-id"
+	headerSnykRequestID     = "snyk-request-id"
+	headerSnykVersionServed = "snyk-version-served"
 )
 
 // A Client manages communication with the Snyk API.
@@ -98,15 +99,8 @@ type service struct {
 	client *Client
 }
 
-type BaseOptions struct {
-	// The requested API version. This query parameter is required.
-	Version string `url:"version"`
-}
-
 // ListOptions specifies the optional parameters to various List methods.
 type ListOptions struct {
-	BaseOptions
-
 	// The page of results immediately after this cursor.
 	StartingAfter string `url:"starting_after,omitempty"`
 
@@ -117,8 +111,36 @@ type ListOptions struct {
 	Limit int `url:"limit,omitempty"`
 }
 
+// restPath builds a REST endpoint path with its required API version and optional query parameters.
+// opts may be nil or a typed nil pointer.
+func restPath(endpoint, version string, opts any) (string, error) {
+	if version == "" {
+		return "", fmt.Errorf("API version is required for endpoint %q", endpoint)
+	}
+
+	path := endpoint
+	if opts != nil {
+		var err error
+		path, err = addOptions(endpoint, opts)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	u, err := url.Parse(path)
+	if err != nil {
+		return "", err
+	}
+
+	qs := u.Query()
+	qs.Set("version", version)
+	u.RawQuery = qs.Encode()
+
+	return u.String(), nil
+}
+
 // addOptions adds the parameters in opts as URL query parameters to s.
-// opts must be a struct whose  fields may contain "url" tags.
+// opts must be a struct whose fields may contain "url" tags.
 func addOptions(s string, opts any) (string, error) {
 	v := reflect.ValueOf(opts)
 	if v.Kind() == reflect.Ptr && v.IsNil() {
@@ -325,18 +347,28 @@ type Response struct {
 	Links *PaginatedLinks
 
 	SnykRequestID string // SnykRequestID returned from the API, useful to contact support.
+
+	// ServedAPIVersion is the endpoint-specific API version selected by Snyk.
+	ServedAPIVersion string
 }
 
 // newResponse creates a new Response for the provided http.Response. r must be not nil.
 func newResponse(r *http.Response) *Response {
 	response := &Response{Response: r}
 	response.populateSnykRequestID()
+	response.populateServedAPIVersion()
 	return response
 }
 
 func (r *Response) populateSnykRequestID() {
 	if snykRequestID := r.Header.Get(headerSnykRequestID); snykRequestID != "" {
 		r.SnykRequestID = snykRequestID
+	}
+}
+
+func (r *Response) populateServedAPIVersion() {
+	if servedAPIVersion := r.Header.Get(headerSnykVersionServed); servedAPIVersion != "" {
+		r.ServedAPIVersion = servedAPIVersion
 	}
 }
 

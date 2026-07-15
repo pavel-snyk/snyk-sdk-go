@@ -16,15 +16,13 @@ type paginatedResponse[T any] struct {
 	Links *PaginatedLinks `json:"links"`
 }
 
-func newPaginator[T any](ctx context.Context, client *Client, baseURL *url.URL, endpointURL string, opts *ListOptions) (iter.Seq2[T, *Response], func() error) {
+func newPaginator[T any](ctx context.Context, client *Client, baseURL *url.URL, endpointURL, version string, opts *ListOptions) (iter.Seq2[T, *Response], func() error) {
 	var iterErr error
+	if opts == nil {
+		opts = &ListOptions{}
+	}
 
 	seq := func(yield func(item T, resp *Response) bool) {
-		if opts == nil {
-			iterErr = fmt.Errorf("ListOptions cannot be nil, API version is required for endpoint %q", endpointURL)
-			return
-		}
-
 		for {
 			select {
 			// if the context has been canceled, the context's error is more useful
@@ -34,7 +32,7 @@ func newPaginator[T any](ctx context.Context, client *Client, baseURL *url.URL, 
 			default:
 			}
 
-			path, err := addOptions(endpointURL, opts)
+			path, err := restPath(endpointURL, version, opts)
 			if err != nil {
 				iterErr = fmt.Errorf("failed to construct URL with options: %w", err)
 				return

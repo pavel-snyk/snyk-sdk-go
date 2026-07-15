@@ -1,5 +1,13 @@
 package snyk
 
+import (
+	"fmt"
+	"net/http"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
 //
 //import (
 //	"fmt"
@@ -34,6 +42,24 @@ package snyk
 //	assert.NoError(t, err)
 //	assert.Equal(t, expectedUser, actualUser)
 //}
+
+func TestUsers_GetSelf(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/self", func(w http.ResponseWriter, r *http.Request) {
+		assertRequestAPIVersion(t, r, usersAPIVersion)
+		_, _ = fmt.Fprint(w, `{
+  "data":{"id":"user-id","type":"user","attributes":{"name":"Test User"}}
+}`)
+	})
+
+	user, _, err := client.Users.GetSelf(ctx)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "user-id", user.ID)
+}
+
 //
 //func TestUsers_Get(t *testing.T) {
 //	setup()

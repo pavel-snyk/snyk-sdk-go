@@ -47,9 +47,7 @@ type userRoot struct {
 func (u User) String() string { return Stringify(u) }
 
 func (s *UsersService) GetSelf(ctx context.Context) (*User, *Response, error) {
-	opts := &BaseOptions{Version: usersAPIVersion}
-
-	path, err := addOptions("self", opts)
+	path, err := restPath("self", usersAPIVersion, nil)
 	if err != nil {
 		return nil, nil, err
 	}
