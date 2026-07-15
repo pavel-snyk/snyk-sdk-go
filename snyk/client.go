@@ -118,18 +118,23 @@ func restPath(endpoint, version string, opts any) (string, error) {
 		return "", fmt.Errorf("API version is required for endpoint %q", endpoint)
 	}
 
-	path := endpoint
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return "", err
+	}
+	if u.RawQuery != "" || u.Fragment != "" {
+		return "", fmt.Errorf("REST endpoint %q must not contain a query or fragment", endpoint)
+	}
+
 	if opts != nil {
-		var err error
-		path, err = addOptions(endpoint, opts)
+		path, err := addOptions(endpoint, opts)
 		if err != nil {
 			return "", err
 		}
-	}
-
-	u, err := url.Parse(path)
-	if err != nil {
-		return "", err
+		u, err = url.Parse(path)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	qs := u.Query()

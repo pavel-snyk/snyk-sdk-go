@@ -96,7 +96,7 @@ func TestClient_restPath(t *testing.T) {
 		opts            any
 		expectedPath    string
 		expectedQueries url.Values
-		errorExpected   bool
+		expectedError   string
 	}{
 		"version-only": {
 			endpoint:        "projects",
@@ -122,31 +122,32 @@ func TestClient_restPath(t *testing.T) {
 				"version":        {"2025-11-05"},
 			},
 		},
-		"preserves-existing-query": {
-			endpoint:     "projects?expand=target&version=caller-value",
-			version:      "2025-11-05",
-			expectedPath: "projects",
-			expectedQueries: url.Values{
-				"expand":  {"target"},
-				"version": {"2025-11-05"},
-			},
+		"rejects-endpoint-query": {
+			endpoint:      "projects?version=caller-value",
+			version:       "2025-11-05",
+			expectedError: "must not contain a query or fragment",
+		},
+		"rejects-endpoint-fragment": {
+			endpoint:      "projects#section",
+			version:       "2025-11-05",
+			expectedError: "must not contain a query or fragment",
 		},
 		"empty-version": {
 			endpoint:      "projects",
-			errorExpected: true,
+			expectedError: "API version is required",
 		},
 		"malformed-endpoint": {
 			endpoint:      "://projects",
 			version:       "2025-11-05",
-			errorExpected: true,
+			expectedError: "missing protocol scheme",
 		},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			path, err := restPath(test.endpoint, test.version, test.opts)
-			if test.errorExpected {
-				assert.Error(t, err)
+			if test.expectedError != "" {
+				assert.ErrorContains(t, err, test.expectedError)
 				return
 			}
 
