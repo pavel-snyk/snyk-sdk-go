@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -245,4 +247,15 @@ func TestClient_newResponse_withoutServedAPIVersion(t *testing.T) {
 func assertRequestAPIVersion(t *testing.T, r *http.Request, expected string) {
 	t.Helper()
 	assert.Equal(t, []string{expected}, r.URL.Query()["version"])
+}
+
+func loadFixture(t *testing.T, fixtureName string) []byte {
+	t.Helper()
+
+	data, err := os.ReadFile(filepath.Join("testdata", fixtureName))
+	if err != nil {
+		t.Fatalf("failed to load fixture %q: %v", fixtureName, err)
+	}
+
+	return data
 }

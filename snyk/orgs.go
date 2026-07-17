@@ -99,16 +99,22 @@ func (s *OrgsService) ListAccessibleOrgs(ctx context.Context, opts *ListOrganiza
 
 // AllAccessibleOrgs returns an iterator over all organizations you have access to.
 //
-// This method handles the pagination logic internally for each page.
+// This method handles the pagination logic internally by calling ListAccessibleOrgs for each page.
+// The returned sequence may be iterated multiple times sequentially. It is not safe
+// for concurrent or overlapping iteration.
 //
 // Note: This function is experimental and its signature may change in a future release.
 //
 // See: https://docs.snyk.io/snyk-api/reference/orgs#get-orgs
 func (s *OrgsService) AllAccessibleOrgs(ctx context.Context, opts *ListOptions) (iter.Seq2[Organization, *Response], func() error) {
-	if opts == nil {
-		opts = &ListOptions{}
+	initialOptions := ListOptions{}
+	if opts != nil {
+		initialOptions = *opts
 	}
-	return newPaginator[Organization](ctx, s.client, s.client.restBaseURL, orgsBasePath, orgsAPIVersion, opts)
+
+	return newPaginator(ctx, initialOptions, func(ctx context.Context, pageOptions ListOptions) ([]Organization, *Response, error) {
+		return s.ListAccessibleOrgs(ctx, &ListOrganizationOptions{ListOptions: pageOptions})
+	})
 }
 
 // Get provides the full details of an organization.

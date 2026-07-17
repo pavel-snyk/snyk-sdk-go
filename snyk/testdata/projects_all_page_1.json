@@ -1,0 +1,19 @@
+{
+  "data": [
+    {
+      "type": "project",
+      "id": "11111111-1111-1111-1111-111111111111",
+      "attributes": {
+        "name": "fake-org/fake-repository",
+        "type": "sast",
+        "origin": "github-cloud-app",
+        "status": "active",
+        "target_file": "",
+        "target_reference": "main"
+      }
+    }
+  ],
+  "links": {
+    "next": "/rest/orgs/org-id/projects?version=server-version&starting_after=next-cursor&ending_before=untrusted&limit=99&origins=untrusted"
+  }
+}

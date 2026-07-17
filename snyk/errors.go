@@ -2,9 +2,13 @@ package snyk
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 )
+
+// ErrEmptyArgument indicates that a required SDK argument was empty.
+var ErrEmptyArgument = errors.New("argument is empty")
 
 // An ErrorResponse reports an error caused by an API request.
 type ErrorResponse struct {
