@@ -13,25 +13,8 @@ const (
 	projectsAPIVersion = "2025-11-05"
 )
 
-// ProjectsServiceAPI is an interface for interacting with the projects endpoints of the Snyk API.
-//
-// See: https://docs.snyk.io/snyk-api/reference/projects
-type ProjectsServiceAPI interface {
-	// List provides a list of all projects for the organization.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/projects#get-orgs-org_id-projects
-	List(ctx context.Context, orgID string, opts *ListProjectsOptions) ([]Project, *Response, error)
-
-	// Get provides the full details about the project.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/projects#get-orgs-org_id-projects-project_id
-	Get(ctx context.Context, orgID, projectID string) (*Project, *Response, error)
-}
-
 // ProjectsService handles communication with the projects related methods of the Snyk API.
 type ProjectsService service
-
-var _ ProjectsServiceAPI = (*ProjectsService)(nil)
 
 // Project represents a Snyk project.
 //
@@ -67,6 +50,9 @@ type projectsRoot struct {
 
 func (p Project) String() string { return Stringify(p) }
 
+// List provides a list of all projects for the organization.
+//
+// See: https://docs.snyk.io/snyk-api/reference/projects#get-orgs-org_id-projects
 func (s *ProjectsService) List(ctx context.Context, orgID string, opts *ListProjectsOptions) ([]Project, *Response, error) {
 	if orgID == "" {
 		return nil, nil, errors.New("orgID must be supplied")
@@ -98,6 +84,9 @@ func (s *ProjectsService) List(ctx context.Context, orgID string, opts *ListProj
 	return root.Projects, resp, nil
 }
 
+// Get provides the full details about the project.
+//
+// See: https://docs.snyk.io/snyk-api/reference/projects#get-orgs-org_id-projects-project_id
 func (s *ProjectsService) Get(ctx context.Context, orgID, projectID string) (*Project, *Response, error) {
 	if orgID == "" {
 		return nil, nil, errors.New("orgID must be supplied")

@@ -77,6 +77,9 @@ them in a PR.
   relevant Snyk API docs page.
 - New services follow the checklist in §5.
 - `context.Context` is always the first parameter.
+- Expose services from `Client` as concrete pointers. Do not define SDK-owned
+  service interfaces. Consumers define narrow interfaces containing only the
+  SDK operations they use, including for mocking.
 
 ## 5. Adding a New Service (checklist)
 
@@ -96,14 +99,12 @@ Follow these steps in order. Each step has a known failure mode if skipped.
    `restPath(endpoint, xAPIVersion, opts)`; never expose the version on
    public option structs.
 
-4. **Define `XServiceAPI` interface** with all public methods, each with
-   a doc comment linking to the Snyk API docs page for that endpoint.
+4. **Implement `XService`** as `type XService service`. Add each public
+   operation directly to this concrete service, with a doc comment linking to
+   the Snyk API docs page for that endpoint.
 
-5. **Implement `XService`** as `type XService service` and add the
-   compile-time check: `var _ XServiceAPI = (*XService)(nil)`.
-
-6. **Wire into `Client`** in `client.go` — two places:
-   - Add the field to the `Client` struct: `X XServiceAPI`
+5. **Wire into `Client`** in `client.go` — two places:
+   - Add the field to the `Client` struct: `X *XService`
    - Assign it in `NewClient`: `c.X = (*XService)(&c.common)`
 
 Forgetting this step means the service compiles but is unreachable

@@ -11,6 +11,9 @@ are not yet considered stable._
 
 snyk-sdk-go is the (un)official Snyk SDK for the Go programming language.
 
+See [Migrating to the v2 technical preview](MIGRATION.md) for deliberate
+source-breaking API changes and the recommended mocking pattern.
+
 ## Installation
 
 ```sh

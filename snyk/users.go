@@ -9,20 +9,8 @@ const (
 	usersAPIVersion = "2025-11-05"
 )
 
-// UsersServiceAPI is an interface for interacting with the users endpoints of the Snyk API.
-//
-// See: https://docs.snyk.io/snyk-api/reference/users
-type UsersServiceAPI interface {
-	// GetSelf provides the details about the user making the request.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/users#get-self
-	GetSelf(ctx context.Context) (*User, *Response, error)
-}
-
 // UsersService handles communication with the user related methods of the Snyk API.
 type UsersService service
-
-var _ UsersServiceAPI = (*UsersService)(nil)
 
 // User represents a Snyk user.
 //
@@ -46,6 +34,9 @@ type userRoot struct {
 
 func (u User) String() string { return Stringify(u) }
 
+// GetSelf provides the details about the user making the request.
+//
+// See: https://docs.snyk.io/snyk-api/reference/users#get-self
 func (s *UsersService) GetSelf(ctx context.Context) (*User, *Response, error) {
 	path, err := restPath("self", usersAPIVersion, nil)
 	if err != nil {

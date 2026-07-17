@@ -18,106 +18,8 @@ const (
 	brokersAPIVersion          = "2025-11-05"
 )
 
-// BrokersServiceAPI is an interface for interacting with the brokers endpoints of the Snyk API.
-//
-// See: https://docs.snyk.io/snyk-api/reference/universal-broker
-type BrokersServiceAPI interface {
-	// ListDeployments provides a list of broker deployments.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-installs-install_id-deployments
-	ListDeployments(ctx context.Context, tenantID, appInstallID string) ([]BrokerDeployment, *Response, error)
-
-	// ListDeploymentsForTenant provides a ist of broker deployments for the tenant.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-deployments
-	ListDeploymentsForTenant(ctx context.Context, tenantID string) ([]BrokerDeployment, *Response, error)
-
-	// CreateDeployment makes a new broker deployment.
-	// "orgID" parameter in createRequest is the ID of organization where Universal Broker Snyk App is installed.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#post-tenants-tenant_id-brokers-installs-install_id-deployments
-	CreateDeployment(ctx context.Context, tenantID, appInstallID string, createRequest *BrokerDeploymentCreateOrUpdateRequest) (*BrokerDeployment, *Response, error)
-
-	// UpdateDeployment changes a broker deployment.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#patch-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id
-	UpdateDeployment(ctx context.Context, tenantID, appInstallID, deploymentID string, updateRequest *BrokerDeploymentCreateOrUpdateRequest) (*BrokerDeployment, *Response, error)
-
-	// DeleteDeployment removes a broker deployment.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#delete-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id
-	DeleteDeployment(ctx context.Context, tenantID, appInstallID, deploymentID string) (*Response, error)
-
-	// ListDeploymentCredentials provides a list of broker deployment credentials for a given deployment.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-credentials
-	ListDeploymentCredentials(ctx context.Context, tenantID, appInstallID, deploymentID string) ([]BrokerDeploymentCredential, *Response, error)
-
-	// GetDeploymentCredential provides the full details of a broker deployment credential for a given deployment.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-credentials-credential_i
-	GetDeploymentCredential(ctx context.Context, tenantID, appInstallID, deploymentID, credentialID string) (*BrokerDeploymentCredential, *Response, error)
-
-	// CreateDeploymentCredential makes a new broker deployment credential.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#post-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-credentials
-	CreateDeploymentCredential(ctx context.Context, tenantID, appInstallID, deploymentID string, createRequest *BrokerDeploymentCredentialCreateOrUpdateRequest) (*BrokerDeploymentCredential, *Response, error)
-
-	// UpdateDeploymentCredential changes a broker deployment credential.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#patch-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-credentials-credential
-	UpdateDeploymentCredential(ctx context.Context, tenantID, appInstallID, deploymentID, credentialID string, updateRequest *BrokerDeploymentCredentialCreateOrUpdateRequest) (*BrokerDeploymentCredential, *Response, error)
-
-	// DeleteDeploymentCredential removes a broker deployment credential.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#delete-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-credentials-credentia
-	DeleteDeploymentCredential(ctx context.Context, tenantID, appInstallID, deploymentID, credentialID string) (*Response, error)
-
-	// ListConnections provides a list of broker connections for a given deployment.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-connections
-	ListConnections(ctx context.Context, tenantID, appInstallID, deploymentID string) ([]BrokerConnection, *Response, error)
-
-	// GetConnection provides the full details of a broker connection for a given deployment.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-connections-connection_i
-	GetConnection(ctx context.Context, tenantID, appInstallID, deploymentID, connectionID string) (*BrokerConnection, *Response, error)
-
-	// CreateConnection makes a new broker connection.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#post-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-connections
-	CreateConnection(ctx context.Context, tenantID, appInstallID, deploymentID string, createRequest *BrokerConnectionCreateOrUpdateRequest) (*BrokerConnection, *Response, error)
-
-	// UpdateConnection changes a broker connection.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#patch-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-connections-connection
-	UpdateConnection(ctx context.Context, tenantID, appInstallID, deploymentID, connectionID string, updateRequest *BrokerConnectionCreateOrUpdateRequest) (*BrokerConnection, *Response, error)
-
-	// DeleteConnection removes a broker connection.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#delete-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-connections-connectio
-	DeleteConnection(ctx context.Context, tenantID, appInstallID, deploymentID, connectionID string) (*Response, error)
-
-	// ListIntegrations provides a list of all integrations for a given broker connection.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-connections-connection_id-integrations
-	ListIntegrations(ctx context.Context, tenantID, connectionID string) ([]BrokerIntegration, *Response, error)
-
-	// CreateIntegration creates a broker integration and configures to use the broker connection for a given org.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#post-tenants-tenant_id-brokers-connections-connection_id-orgs-org_id-integration
-	CreateIntegration(ctx context.Context, tenantID, connectionID, orgID string, createRequest *BrokerIntegrationCreateRequest) (*BrokerIntegration, *Response, error)
-
-	// DeleteIntegration removes a broker integration.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/universal-broker#delete-tenants-tenant_id-brokers-connections-connection_id-orgs-org_id-integrations-integration_id
-	DeleteIntegration(ctx context.Context, tenantID, connectionID, orgID, integrationID string) (*Response, error)
-}
-
 // BrokersService handles communication with the broker related methods of the Snyk API.
 type BrokersService service
-
-var _ BrokersServiceAPI = (*BrokersService)(nil)
 
 // BrokerDeployment represents a Snyk broker deployment.
 //
@@ -150,6 +52,9 @@ type brokerDeploymentsRoot struct {
 
 func (d BrokerDeployment) String() string { return Stringify(d) }
 
+// ListDeployments provides a list of broker deployments.
+//
+// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-installs-install_id-deployments
 func (s *BrokersService) ListDeployments(ctx context.Context, tenantID, appInstallID string) ([]BrokerDeployment, *Response, error) {
 	if tenantID == "" {
 		return nil, nil, errors.New("failed to list broker deployments: tenant id must be supplied")
@@ -180,6 +85,9 @@ func (s *BrokersService) ListDeployments(ctx context.Context, tenantID, appInsta
 	return root.BrokerDeployments, resp, nil
 }
 
+// ListDeploymentsForTenant provides a list of broker deployments for the tenant.
+//
+// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-deployments
 func (s *BrokersService) ListDeploymentsForTenant(ctx context.Context, tenantID string) ([]BrokerDeployment, *Response, error) {
 	if tenantID == "" {
 		return nil, nil, errors.New("failed to list broker deployments: tenant id must be supplied")
@@ -207,6 +115,10 @@ func (s *BrokersService) ListDeploymentsForTenant(ctx context.Context, tenantID 
 	return root.BrokerDeployments, resp, nil
 }
 
+// CreateDeployment makes a new broker deployment.
+// The OrgID field identifies the organization where the Universal Broker Snyk App is installed.
+//
+// See: https://docs.snyk.io/snyk-api/reference/universal-broker#post-tenants-tenant_id-brokers-installs-install_id-deployments
 func (s *BrokersService) CreateDeployment(ctx context.Context, tenantID, appInstallID string, createRequest *BrokerDeploymentCreateOrUpdateRequest) (*BrokerDeployment, *Response, error) {
 	if tenantID == "" {
 		return nil, nil, errors.New("failed to create broker deployment: tenant id must be supplied")
@@ -255,6 +167,9 @@ func (s *BrokersService) CreateDeployment(ctx context.Context, tenantID, appInst
 	return root.BrokerDeployment, resp, nil
 }
 
+// UpdateDeployment changes a broker deployment.
+//
+// See: https://docs.snyk.io/snyk-api/reference/universal-broker#patch-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id
 func (s *BrokersService) UpdateDeployment(ctx context.Context, tenantID, appInstallID, deploymentID string, updateRequest *BrokerDeploymentCreateOrUpdateRequest) (*BrokerDeployment, *Response, error) {
 	if tenantID == "" {
 		return nil, nil, errors.New("failed to update broker deployment: tenant id must be supplied")
@@ -308,6 +223,9 @@ func (s *BrokersService) UpdateDeployment(ctx context.Context, tenantID, appInst
 	return root.BrokerDeployment, resp, nil
 }
 
+// DeleteDeployment removes a broker deployment.
+//
+// See: https://docs.snyk.io/snyk-api/reference/universal-broker#delete-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id
 func (s *BrokersService) DeleteDeployment(ctx context.Context, tenantID, appInstallID, deploymentID string) (*Response, error) {
 	if tenantID == "" {
 		return nil, errors.New("failed to delete broker deployment: tenant id must be supplied")
@@ -365,6 +283,9 @@ type brokerDeploymentCredentialsRoot struct {
 
 func (dc BrokerDeploymentCredential) String() string { return Stringify(dc) }
 
+// ListDeploymentCredentials provides a list of broker deployment credentials for a given deployment.
+//
+// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-credentials
 func (s *BrokersService) ListDeploymentCredentials(ctx context.Context, tenantID, appInstallID, deploymentID string) ([]BrokerDeploymentCredential, *Response, error) {
 	if tenantID == "" {
 		return nil, nil, errors.New("failed to list broker deployment credentials: tenant id must be supplied")
@@ -398,6 +319,9 @@ func (s *BrokersService) ListDeploymentCredentials(ctx context.Context, tenantID
 	return root.BrokerDeploymentCredentials, resp, nil
 }
 
+// GetDeploymentCredential provides the full details of a broker deployment credential for a given deployment.
+//
+// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-credentials-credential_i
 func (s *BrokersService) GetDeploymentCredential(ctx context.Context, tenantID, appInstallID, deploymentID, credentialID string) (*BrokerDeploymentCredential, *Response, error) {
 	if tenantID == "" {
 		return nil, nil, errors.New("failed to get broker deployment credential: tenant id must be supplied")
@@ -431,6 +355,9 @@ func (s *BrokersService) GetDeploymentCredential(ctx context.Context, tenantID, 
 	return root.BrokerDeploymentCredential, resp, nil
 }
 
+// CreateDeploymentCredential makes a new broker deployment credential.
+//
+// See: https://docs.snyk.io/snyk-api/reference/universal-broker#post-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-credentials
 func (s *BrokersService) CreateDeploymentCredential(ctx context.Context, tenantID, appInstallID, deploymentID string, createRequest *BrokerDeploymentCredentialCreateOrUpdateRequest) (*BrokerDeploymentCredential, *Response, error) {
 	if tenantID == "" {
 		return nil, nil, errors.New("failed to create broker deployment credentials: tenant id must be supplied")
@@ -483,6 +410,9 @@ func (s *BrokersService) CreateDeploymentCredential(ctx context.Context, tenantI
 
 }
 
+// UpdateDeploymentCredential changes a broker deployment credential.
+//
+// See: https://docs.snyk.io/snyk-api/reference/universal-broker#patch-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-credentials-credential
 func (s *BrokersService) UpdateDeploymentCredential(ctx context.Context, tenantID, appInstallID, deploymentID, credentialID string, updateRequest *BrokerDeploymentCredentialCreateOrUpdateRequest) (*BrokerDeploymentCredential, *Response, error) {
 	if tenantID == "" {
 		return nil, nil, errors.New("failed to update broker deployment credential: tenant id must be supplied")
@@ -535,6 +465,9 @@ func (s *BrokersService) UpdateDeploymentCredential(ctx context.Context, tenantI
 	return root.BrokerDeploymentCredential, resp, nil
 }
 
+// DeleteDeploymentCredential removes a broker deployment credential.
+//
+// See: https://docs.snyk.io/snyk-api/reference/universal-broker#delete-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-credentials-credentia
 func (s *BrokersService) DeleteDeploymentCredential(ctx context.Context, tenantID, appInstallID, deploymentID, credentialID string) (*Response, error) {
 	if tenantID == "" {
 		return nil, errors.New("failed to delete broker deployment credential: tenant id must be supplied")
@@ -994,6 +927,9 @@ type brokerConnectionsRoot struct {
 
 func (c BrokerConnection) String() string { return Stringify(c) }
 
+// ListConnections provides a list of broker connections for a given deployment.
+//
+// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-connections
 func (s *BrokersService) ListConnections(ctx context.Context, tenantID, appInstallID, deploymentID string) ([]BrokerConnection, *Response, error) {
 	if tenantID == "" {
 		return nil, nil, errors.New("failed to list broker connections: tenant id must be supplied")
@@ -1027,6 +963,9 @@ func (s *BrokersService) ListConnections(ctx context.Context, tenantID, appInsta
 	return root.BrokerConnections, resp, nil
 }
 
+// GetConnection provides the full details of a broker connection for a given deployment.
+//
+// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-connections-connection_i
 func (s *BrokersService) GetConnection(ctx context.Context, tenantID, appInstallID, deploymentID, connectionID string) (*BrokerConnection, *Response, error) {
 	if tenantID == "" {
 		return nil, nil, errors.New("failed to get broker connection: tenant id must be supplied")
@@ -1060,6 +999,9 @@ func (s *BrokersService) GetConnection(ctx context.Context, tenantID, appInstall
 	return root.BrokerConnection, resp, nil
 }
 
+// CreateConnection makes a new broker connection.
+//
+// See: https://docs.snyk.io/snyk-api/reference/universal-broker#post-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-connections
 func (s *BrokersService) CreateConnection(ctx context.Context, tenantID, appInstallID, deploymentID string, createRequest *BrokerConnectionCreateOrUpdateRequest) (*BrokerConnection, *Response, error) {
 	if tenantID == "" {
 		return nil, nil, errors.New("failed to create broker connection: tenant id must be supplied")
@@ -1098,6 +1040,9 @@ func (s *BrokersService) CreateConnection(ctx context.Context, tenantID, appInst
 	return root.BrokerConnection, resp, nil
 }
 
+// UpdateConnection changes a broker connection.
+//
+// See: https://docs.snyk.io/snyk-api/reference/universal-broker#patch-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-connections-connection
 func (s *BrokersService) UpdateConnection(ctx context.Context, tenantID, appInstallID, deploymentID, connectionID string, updateRequest *BrokerConnectionCreateOrUpdateRequest) (*BrokerConnection, *Response, error) {
 	if tenantID == "" {
 		return nil, nil, errors.New("failed to update broker connection: tenant id must be supplied")
@@ -1139,6 +1084,9 @@ func (s *BrokersService) UpdateConnection(ctx context.Context, tenantID, appInst
 	return root.BrokerConnection, resp, nil
 }
 
+// DeleteConnection removes a broker connection.
+//
+// See: https://docs.snyk.io/snyk-api/reference/universal-broker#delete-tenants-tenant_id-brokers-installs-install_id-deployments-deployment_id-connections-connectio
 func (s *BrokersService) DeleteConnection(ctx context.Context, tenantID, appInstallID, deploymentID, connectionID string) (*Response, error) {
 	if tenantID == "" {
 		return nil, errors.New("failed to delete broker connection: tenant id must be supplied")
@@ -1678,6 +1626,9 @@ type brokerIntegrationsRoot struct {
 
 func (i BrokerIntegration) String() string { return Stringify(i) }
 
+// ListIntegrations provides a list of all integrations for a given broker connection.
+//
+// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-connections-connection_id-integrations
 func (s *BrokersService) ListIntegrations(ctx context.Context, tenantID, connectionID string) ([]BrokerIntegration, *Response, error) {
 	if tenantID == "" {
 		return nil, nil, errors.New("failed to list broker integrations: tenant id must be supplied")
@@ -1708,6 +1659,9 @@ func (s *BrokersService) ListIntegrations(ctx context.Context, tenantID, connect
 	return root.BrokerIntegrations, resp, nil
 }
 
+// CreateIntegration creates a broker integration and configures it to use the broker connection for a given organization.
+//
+// See: https://docs.snyk.io/snyk-api/reference/universal-broker#post-tenants-tenant_id-brokers-connections-connection_id-orgs-org_id-integration
 func (s *BrokersService) CreateIntegration(ctx context.Context, tenantID, connectionID, orgID string, createRequest *BrokerIntegrationCreateRequest) (*BrokerIntegration, *Response, error) {
 	if tenantID == "" {
 		return nil, nil, errors.New("failed to create broker integration: tenant id must be supplied")
@@ -1753,6 +1707,9 @@ func (s *BrokersService) CreateIntegration(ctx context.Context, tenantID, connec
 	return root.BrokerIntegration, resp, nil
 }
 
+// DeleteIntegration removes a broker integration.
+//
+// See: https://docs.snyk.io/snyk-api/reference/universal-broker#delete-tenants-tenant_id-brokers-connections-connection_id-orgs-org_id-integrations-integration_id
 func (s *BrokersService) DeleteIntegration(ctx context.Context, tenantID, connectionID, orgID, integrationID string) (*Response, error) {
 	if tenantID == "" {
 		return nil, errors.New("failed to delete broker integration: tenant id must be supplied")

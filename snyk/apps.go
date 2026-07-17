@@ -13,31 +13,8 @@ const (
 	appsAPIVersion = "2025-11-05"
 )
 
-// AppsServiceAPI is an interface for interacting with the apps endpoints of the Snyk API.
-//
-// See: https://docs.snyk.io/snyk-api/reference/apps
-type AppsServiceAPI interface {
-	// ListAppInstallsForOrg gets a list of Snyk Apps installed for an Organization. If ListAppInstallOptions is nil,
-	// then relationship for App will be always expanded.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/apps#get-orgs-org_id-apps-installs
-	ListAppInstallsForOrg(ctx context.Context, orgID string, opts *ListAppInstallOptions) ([]AppInstall, *Response, error)
-
-	// CreateAppInstallForOrg installs a Snyk App to an Organization. The App must use unattended authentication e.g. client credentials.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/apps#post-orgs-org_id-apps-installs
-	CreateAppInstallForOrg(ctx context.Context, orgID, appID string) (*AppInstall, *Response, error)
-
-	// DeleteAppInstallFromOrg revokes app authorization for an Organization with install ID.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/apps#delete-orgs-org_id-apps-installs-install_id
-	DeleteAppInstallFromOrg(ctx context.Context, orgID, appInstallID string) (*Response, error)
-}
-
 // AppsService handles communication with the app related methods of the Snyk API.
 type AppsService service
-
-var _ AppsServiceAPI = &AppsService{}
 
 // App represents a Snyk app.
 //
@@ -95,6 +72,10 @@ type appInstallsRoot struct {
 
 func (ai AppInstall) String() string { return Stringify(ai) }
 
+// ListAppInstallsForOrg gets a list of Snyk Apps installed for an Organization. If ListAppInstallOptions is nil,
+// then relationship for App will be always expanded.
+//
+// See: https://docs.snyk.io/snyk-api/reference/apps#get-orgs-org_id-apps-installs
 func (s *AppsService) ListAppInstallsForOrg(ctx context.Context, orgID string, opts *ListAppInstallOptions) ([]AppInstall, *Response, error) {
 	if orgID == "" {
 		return nil, nil, errors.New("failed to list app installs for org: org id must be supplied")
@@ -126,6 +107,9 @@ func (s *AppsService) ListAppInstallsForOrg(ctx context.Context, orgID string, o
 	return root.AppInstalls, resp, nil
 }
 
+// CreateAppInstallForOrg installs a Snyk App to an Organization. The App must use unattended authentication e.g. client credentials.
+//
+// See: https://docs.snyk.io/snyk-api/reference/apps#post-orgs-org_id-apps-installs
 func (s *AppsService) CreateAppInstallForOrg(ctx context.Context, orgID, appID string) (*AppInstall, *Response, error) {
 	if orgID == "" {
 		return nil, nil, errors.New("failed to create app install for org: org id must be supplied")
@@ -170,6 +154,9 @@ func (s *AppsService) CreateAppInstallForOrg(ctx context.Context, orgID, appID s
 	return appInstallRoot.AppInstall, resp, nil
 }
 
+// DeleteAppInstallFromOrg revokes app authorization for an Organization with install ID.
+//
+// See: https://docs.snyk.io/snyk-api/reference/apps#delete-orgs-org_id-apps-installs-install_id
 func (s *AppsService) DeleteAppInstallFromOrg(ctx context.Context, orgID, appInstallID string) (*Response, error) {
 	if orgID == "" {
 		return nil, errors.New("failed to delete app install for org: org id must be supplied")
