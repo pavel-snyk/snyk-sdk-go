@@ -14,36 +14,8 @@ const (
 	groupsAPIVersion = "2025-11-05"
 )
 
-// GroupsServiceAPI is an interface for interacting with the groups endpoints of the Snyk API.
-//
-// See: https://docs.snyk.io/snyk-api/reference/groups
-type GroupsServiceAPI interface {
-	// List gets a paginated list of all groups you are a member of.
-	//
-	// Note: Group attributes will contain only name. If you want to access full details
-	// of a group, use Get method.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/groups#get-groups
-	List(ctx context.Context, opts *ListOptions) ([]Group, *Response, error)
-
-	// All returns an iterator to paginate over all groups you are a member of.
-	//
-	// This method handles the pagination logic internally by calling List for each page.
-	// The return iterated can be used in a for...range loop to easily process all groups.
-	//
-	// Note: This function is experimental and its signature may change in a future release.
-	All(ctx context.Context, opts *ListOptions) (iter.Seq2[Group, *Response], func() error)
-
-	// Get provides the full details of an group.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/group#get-groups-group_id
-	Get(ctx context.Context, groupID string) (*Group, *Response, error)
-}
-
 // GroupsService handles communication with the group related methods of the Snyk API.
 type GroupsService service
-
-var _ GroupsServiceAPI = (*GroupsService)(nil)
 
 // Group represents a Snyk group.
 //
@@ -81,6 +53,12 @@ type groupsRoot struct {
 
 func (g Group) String() string { return Stringify(g) }
 
+// List gets a paginated list of all groups you are a member of.
+//
+// Note: Group attributes will contain only name. If you want to access full details
+// of a group, use Get method.
+//
+// See: https://docs.snyk.io/snyk-api/reference/groups#get-groups
 func (s *GroupsService) List(ctx context.Context, opts *ListOptions) ([]Group, *Response, error) {
 	if opts == nil {
 		opts = &ListOptions{}
@@ -108,6 +86,13 @@ func (s *GroupsService) List(ctx context.Context, opts *ListOptions) ([]Group, *
 	return root.Groups, resp, nil
 }
 
+// All returns an iterator to paginate over all groups you are a member of.
+//
+// This method handles the pagination logic internally for each page.
+//
+// Note: This function is experimental and its signature may change in a future release.
+//
+// See: https://docs.snyk.io/snyk-api/reference/groups#get-groups
 func (s *GroupsService) All(ctx context.Context, opts *ListOptions) (iter.Seq2[Group, *Response], func() error) {
 	if opts == nil {
 		opts = &ListOptions{}
@@ -115,6 +100,9 @@ func (s *GroupsService) All(ctx context.Context, opts *ListOptions) (iter.Seq2[G
 	return newPaginator[Group](ctx, s.client, s.client.restBaseURL, groupsBasePath, groupsAPIVersion, opts)
 }
 
+// Get provides the full details of a group.
+//
+// See: https://docs.snyk.io/snyk-api/reference/group#get-groups-group_id
 func (s *GroupsService) Get(ctx context.Context, groupID string) (*Group, *Response, error) {
 	if groupID == "" {
 		return nil, nil, errors.New("failed to get org: id must be supplied")

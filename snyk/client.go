@@ -41,13 +41,13 @@ type Client struct {
 
 	common service // reuse a single struct instead of allocating one for each service on the heap.
 
-	Apps     AppsServiceAPI
-	Brokers  BrokersServiceAPI
-	Groups   GroupsServiceAPI
-	Orgs     OrgsServiceAPI
-	OrgsV1   OrgsServiceV1API
-	Projects ProjectsServiceAPI
-	Users    UsersServiceAPI
+	Apps     *AppsService
+	Brokers  *BrokersService
+	Groups   *GroupsService
+	Orgs     *OrgsService
+	OrgsV1   *OrgsServiceV1
+	Projects *ProjectsService
+	Users    *UsersService
 }
 
 // Region is used to configure the SDK to communicate with different Snyk regional instances.

@@ -9,28 +9,8 @@ import (
 
 const orgV1BasePath = "org"
 
-// OrgsServiceV1API is an interface for interacting with the orgs endpoints of the Snyk V1 API.
-//
-// Note: Snyk V1 API endpoints are being gradually deprecated. It is recommended
-// to use the REST API via OrgsServiceAPI where possible.
-//
-// See: https://docs.snyk.io/snyk-api/reference/organizations-v1
-type OrgsServiceV1API interface {
-	// Create makes a new organization with given payload.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/organizations-v1#post-org
-	Create(ctx context.Context, createRequest *OrganizationV1CreateRequest) (*OrganizationV1, *Response, error)
-
-	// Delete removes an organization identified by id.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/organizations-v1#delete-org-orgid
-	Delete(ctx context.Context, orgID string) (*Response, error)
-}
-
 // OrgsServiceV1 handles communication with the org related methods of the Snyk V1 API.
 type OrgsServiceV1 service
-
-var _ OrgsServiceV1API = &OrgsServiceV1{}
 
 // OrganizationV1 represents a Snyk organization for V1 API.
 type OrganizationV1 struct {
@@ -55,6 +35,9 @@ type OrganizationV1CreateRequest struct {
 
 func (o OrganizationV1) String() string { return Stringify(o) }
 
+// Create makes a new organization with given payload.
+//
+// See: https://docs.snyk.io/snyk-api/reference/organizations-v1#post-org
 func (s *OrgsServiceV1) Create(ctx context.Context, createRequest *OrganizationV1CreateRequest) (*OrganizationV1, *Response, error) {
 	if createRequest == nil {
 		return nil, nil, errors.New("failed to create organization: payload must be supplied")
@@ -74,6 +57,9 @@ func (s *OrgsServiceV1) Create(ctx context.Context, createRequest *OrganizationV
 	return orgV1, resp, nil
 }
 
+// Delete removes an organization identified by ID.
+//
+// See: https://docs.snyk.io/snyk-api/reference/organizations-v1#delete-org-orgid
 func (s *OrgsServiceV1) Delete(ctx context.Context, orgID string) (*Response, error) {
 	if orgID == "" {
 		return nil, errors.New("failed to delete organization: id must be supplied")

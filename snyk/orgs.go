@@ -14,39 +14,8 @@ const (
 	orgsAPIVersion = "2024-10-15"
 )
 
-// OrgsServiceAPI is an interface for interacting with the orgs endpoints of the Snyk API.
-//
-// See: https://docs.snyk.io/snyk-api/reference/orgs
-type OrgsServiceAPI interface {
-	// ListAccessibleOrgs gets a paginated list of organizations you have access to. If ListOrganizationOptions is nil,
-	// then relationship for MemberRole will be always expanded.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/orgs#get-orgs
-	ListAccessibleOrgs(ctx context.Context, opts *ListOrganizationOptions) ([]Organization, *Response, error)
-
-	// AllAccessibleOrgs returns an iterator to paginate over all organizations you have access to.
-	//
-	// This method handles the pagination logic internally by calling ListAccessibleOrgs for each page.
-	// The return iterated can be used in a for...range loop to easily process all organizations.
-	//
-	// Note: This function is experimental and its signature may change in a future release.
-	AllAccessibleOrgs(ctx context.Context, opts *ListOptions) (iter.Seq2[Organization, *Response], func() error)
-
-	// Get provides the full details of an organization.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/orgs#get-orgs-org_id
-	Get(ctx context.Context, orgID string, opts *GetOrganizationOptions) (*Organization, *Response, error)
-
-	// Update changes the details of an organization.
-	//
-	// See: https://docs.snyk.io/snyk-api/reference/orgs#patch-orgs-org_id
-	Update(ctx context.Context, orgID string, updateRequest *OrganizationUpdateRequest) (*Organization, *Response, error)
-}
-
 // OrgsService handles communication with the org related methods of the Snyk API.
 type OrgsService service
-
-var _ OrgsServiceAPI = (*OrgsService)(nil)
 
 // Organization represents a Snyk organization.
 //
@@ -97,6 +66,10 @@ type orgsRoot struct {
 
 func (o Organization) String() string { return Stringify(o) }
 
+// ListAccessibleOrgs gets a paginated list of organizations you have access to. If ListOrganizationOptions is nil,
+// then relationship for MemberRole will be always expanded.
+//
+// See: https://docs.snyk.io/snyk-api/reference/orgs#get-orgs
 func (s *OrgsService) ListAccessibleOrgs(ctx context.Context, opts *ListOrganizationOptions) ([]Organization, *Response, error) {
 	if opts == nil {
 		opts = &ListOrganizationOptions{}
@@ -124,6 +97,13 @@ func (s *OrgsService) ListAccessibleOrgs(ctx context.Context, opts *ListOrganiza
 	return root.Organizations, resp, nil
 }
 
+// AllAccessibleOrgs returns an iterator over all organizations you have access to.
+//
+// This method handles the pagination logic internally for each page.
+//
+// Note: This function is experimental and its signature may change in a future release.
+//
+// See: https://docs.snyk.io/snyk-api/reference/orgs#get-orgs
 func (s *OrgsService) AllAccessibleOrgs(ctx context.Context, opts *ListOptions) (iter.Seq2[Organization, *Response], func() error) {
 	if opts == nil {
 		opts = &ListOptions{}
@@ -131,6 +111,9 @@ func (s *OrgsService) AllAccessibleOrgs(ctx context.Context, opts *ListOptions) 
 	return newPaginator[Organization](ctx, s.client, s.client.restBaseURL, orgsBasePath, orgsAPIVersion, opts)
 }
 
+// Get provides the full details of an organization.
+//
+// See: https://docs.snyk.io/snyk-api/reference/orgs#get-orgs-org_id
 func (s *OrgsService) Get(ctx context.Context, orgID string, opts *GetOrganizationOptions) (*Organization, *Response, error) {
 	if orgID == "" {
 		return nil, nil, errors.New("failed to get org: id must be supplied")
@@ -159,6 +142,9 @@ func (s *OrgsService) Get(ctx context.Context, orgID string, opts *GetOrganizati
 	return root.Organization, resp, nil
 }
 
+// Update changes the details of an organization.
+//
+// See: https://docs.snyk.io/snyk-api/reference/orgs#patch-orgs-org_id
 func (s *OrgsService) Update(ctx context.Context, orgID string, updateRequest *OrganizationUpdateRequest) (*Organization, *Response, error) {
 	if orgID == "" {
 		return nil, nil, errors.New("failed to update org: id must be supplied")
