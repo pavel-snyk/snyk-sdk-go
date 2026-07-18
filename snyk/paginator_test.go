@@ -97,7 +97,9 @@ func TestPaginator_newPaginator_resetsErrorForNextSequentialIteration(t *testing
 
 func TestPaginator_newPaginator_propagatesFetchError(t *testing.T) {
 	fetchErr := errors.New("fetch page")
+	fetchCount := 0
 	seq, iterErr := newPaginator(context.Background(), ListOptions{}, func(context.Context, ListOptions) ([]string, *Response, error) {
+		fetchCount++
 		return nil, &Response{}, fetchErr
 	})
 
@@ -105,6 +107,7 @@ func TestPaginator_newPaginator_propagatesFetchError(t *testing.T) {
 		t.Fatal("unexpected item")
 	}
 
+	assert.Equal(t, 1, fetchCount)
 	require.ErrorIs(t, iterErr(), fetchErr)
 }
 
@@ -245,4 +248,12 @@ func TestPaginator_extractStartingAfterQueryParam(t *testing.T) {
 			}
 		})
 	}
+}
+
+func mustStartingAfter(t *testing.T, path string) string {
+	t.Helper()
+
+	cursor, err := extractStartingAfterQueryParam(path)
+	require.NoError(t, err)
+	return cursor
 }

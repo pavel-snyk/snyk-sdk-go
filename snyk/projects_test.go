@@ -35,7 +35,7 @@ func TestProject_MarshalJSON(t *testing.T) {
 	}`, string(got))
 }
 
-func TestProjectFromResource(t *testing.T) {
+func TestProjects_projectFromResource(t *testing.T) {
 	resource := projectResource{
 		ID:   "project-id",
 		Type: "project",
@@ -55,15 +55,15 @@ func TestProjectFromResource(t *testing.T) {
 	assert.Equal(t, Project{
 		ID:               "project-id",
 		Name:             "example",
-		ProjectType:      ProjectType("future-project-type"),
-		Origin:           ProjectOrigin("future-origin"),
-		MonitoringStatus: ProjectMonitoringStatus("future-status"),
+		ProjectType:      "future-project-type",
+		Origin:           "future-origin",
+		MonitoringStatus: "future-status",
 		TargetPath:       "path/to/project",
 		TargetReference:  "future-reference",
 	}, project)
 }
 
-func TestProjectFromResource_rejectsStructuralViolations(t *testing.T) {
+func TestProjects_projectFromResource_rejectsStructuralViolations(t *testing.T) {
 	tests := []struct {
 		name     string
 		resource projectResource
@@ -96,7 +96,7 @@ func TestProjectFromResource_rejectsStructuralViolations(t *testing.T) {
 }
 
 func TestProjects_List_success(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	fixture := loadFixture(t, "projects_list_success.json")
@@ -136,8 +136,8 @@ func TestProjects_List_success(t *testing.T) {
 	assert.Equal(t, Project{
 		ID:               "11111111-1111-1111-1111-111111111111",
 		Name:             "fake-image:/usr/local/lib/node_modules",
-		ProjectType:      ProjectType("npm"),
-		Origin:           ProjectOrigin("cli"),
+		ProjectType:      "npm",
+		Origin:           "cli",
 		MonitoringStatus: ProjectMonitoringStatusActive,
 		TargetPath:       "/usr/local/lib/node_modules",
 		TargetReference:  "docker-image|fake-image",
@@ -145,17 +145,18 @@ func TestProjects_List_success(t *testing.T) {
 	assert.Equal(t, Project{
 		ID:               "22222222-2222-2222-2222-222222222222",
 		Name:             "fake-org/fake-repository",
-		ProjectType:      ProjectType("sast"),
-		Origin:           ProjectOrigin("github-cloud-app"),
+		ProjectType:      "sast",
+		Origin:           "github-cloud-app",
 		MonitoringStatus: ProjectMonitoringStatusInactive,
 		TargetPath:       "",
 		TargetReference:  "main",
 	}, projects[1])
+	require.NotNil(t, response.Links)
 	assert.Equal(t, "next-cursor", mustStartingAfter(t, response.Links.Next))
 }
 
 func TestProjects_List_nilOptions(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/orgs/org-id/projects", func(w http.ResponseWriter, r *http.Request) {
@@ -171,7 +172,7 @@ func TestProjects_List_nilOptions(t *testing.T) {
 }
 
 func TestProjects_List_rejectsMalformedResourceWithContext(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/orgs/org-id/projects", func(w http.ResponseWriter, _ *http.Request) {
@@ -201,7 +202,7 @@ func TestProjects_List_rejectsMissingOrNullData(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			setup()
+			setup(t)
 			defer teardown()
 
 			mux.HandleFunc("/orgs/org-id/projects", func(w http.ResponseWriter, _ *http.Request) {
@@ -217,17 +218,8 @@ func TestProjects_List_rejectsMissingOrNullData(t *testing.T) {
 	}
 }
 
-func TestProjects_List_validatesOrgID(t *testing.T) {
-	projects, response, err := client.Projects.List(ctx, "", nil)
-
-	assert.Nil(t, projects)
-	assert.Nil(t, response)
-	require.ErrorIs(t, err, ErrEmptyArgument)
-	require.EqualError(t, err, "organization ID: argument is empty")
-}
-
 func TestProjects_All_multiplePages(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	page1 := loadFixture(t, "projects_all_page_1.json")
@@ -293,27 +285,31 @@ func TestProjects_All_multiplePages(t *testing.T) {
 }
 
 func TestProjects_All_snapshotsOptionsAtConstruction(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	options := &ProjectListOptions{
-		ListOptions:  ListOptions{StartingAfter: "original-cursor", Limit: 10},
-		IDs:          []string{"original-id"},
-		Names:        []string{"original-name"},
-		NamePrefixes: []string{"original-prefix"},
-		ProjectTypes: []ProjectType{"original-type"},
-		Origins:      []ProjectOrigin{"original-origin"},
+		ListOptions:     ListOptions{StartingAfter: "original-cursor", Limit: 10},
+		IDs:             []string{"original-id"},
+		Names:           []string{"original-name"},
+		NamePrefixes:    []string{"original-prefix"},
+		ProjectTypes:    []ProjectType{"original-type"},
+		Origins:         []ProjectOrigin{"original-origin"},
+		TargetPath:      "original-path",
+		TargetReference: "original-reference",
 	}
 	seq, iterErr := client.Projects.All(ctx, "org-id", options)
 
 	options.StartingAfter = "changed-cursor"
 	options.EndingBefore = "changed-ending-cursor"
 	options.Limit = 99
-	options.IDs = []string{"replacement-id"}
+	options.IDs[0] = "mutated-id"
 	options.Names[0] = "mutated-name"
 	options.NamePrefixes[0] = "mutated-prefix"
 	options.ProjectTypes[0] = "mutated-type"
 	options.Origins[0] = "mutated-origin"
+	options.TargetPath = "mutated-path"
+	options.TargetReference = "mutated-reference"
 
 	requestCount := 0
 	mux.HandleFunc("/orgs/org-id/projects", func(w http.ResponseWriter, r *http.Request) {
@@ -325,6 +321,8 @@ func TestProjects_All_snapshotsOptionsAtConstruction(t *testing.T) {
 			"names_start_with": {"original-prefix"},
 			"origins":          {"original-origin"},
 			"starting_after":   {"original-cursor"},
+			"target_file":      {"original-path"},
+			"target_reference": {"original-reference"},
 			"types":            {"original-type"},
 			"version":          {projectsAPIVersion},
 		}, r.URL.Query())
@@ -339,7 +337,7 @@ func TestProjects_All_snapshotsOptionsAtConstruction(t *testing.T) {
 }
 
 func TestProjects_All_restartsSequentialIterationFromInitialCursor(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	page1 := loadFixture(t, "projects_all_page_1.json")
@@ -383,7 +381,7 @@ func TestProjects_All_restartsSequentialIterationFromInitialCursor(t *testing.T)
 }
 
 func TestProjects_All_rejectsEndingBefore(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	seq, iterErr := client.Projects.All(ctx, "org-id", &ProjectListOptions{
@@ -397,7 +395,7 @@ func TestProjects_All_rejectsEndingBefore(t *testing.T) {
 }
 
 func TestProjects_All_convertsEachPageAtomically(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	requestCount := 0
@@ -445,7 +443,7 @@ func TestProjects_All_rejectsMissingOrNullData(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			setup()
+			setup(t)
 			defer teardown()
 
 			mux.HandleFunc("/orgs/org-id/projects", func(w http.ResponseWriter, _ *http.Request) {
@@ -462,47 +460,13 @@ func TestProjects_All_rejectsMissingOrNullData(t *testing.T) {
 	}
 }
 
-func TestProjects_All_propagatesRESTErrorResponse(t *testing.T) {
-	setup()
-	defer teardown()
-
-	mux.HandleFunc("/orgs/org-id/projects", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set(headerSnykVersionServed, "2025-11-05")
-		w.WriteHeader(http.StatusServiceUnavailable)
-		_, _ = fmt.Fprint(w, `{"errors":[{"status":"503","title":"Temporarily unavailable"}]}`)
-	})
-
-	seq, iterErr := client.Projects.All(ctx, "org-id", nil)
-	for range seq {
-		t.Fatal("unexpected Project")
-	}
-
-	err := iterErr()
-	require.Error(t, err)
-	var errorResponse *ErrorResponse
-	require.ErrorAs(t, err, &errorResponse)
-	require.NotNil(t, errorResponse.Response)
-	assert.Equal(t, http.StatusServiceUnavailable, errorResponse.Response.StatusCode)
-	assert.Equal(t, "2025-11-05", errorResponse.Response.ServedAPIVersion)
-}
-
-func TestProjects_All_validatesOrgID(t *testing.T) {
-	seq, iterErr := client.Projects.All(ctx, "", nil)
-	for range seq {
-		t.Fatal("unexpected Project")
-	}
-
-	err := iterErr()
-	require.ErrorIs(t, err, ErrEmptyArgument)
-	require.EqualError(t, err, "organization ID: argument is empty")
-}
-
 func TestProjects_Get_success(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
+	const projectID = "11111111-1111-1111-1111-111111111111"
 	fixture := loadFixture(t, "projects_get_success.json")
-	mux.HandleFunc("/orgs/org-id/projects/project-id", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/orgs/org-id/projects/"+projectID, func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method)
 		assert.Equal(t, restAPIMediaType, r.Header.Get("Accept"))
 		assertRequestAPIVersion(t, r, projectsAPIVersion)
@@ -510,61 +474,71 @@ func TestProjects_Get_success(t *testing.T) {
 		_, _ = w.Write(fixture)
 	})
 
-	project, response, err := client.Projects.Get(ctx, "org-id", "project-id")
+	project, response, err := client.Projects.Get(ctx, "org-id", projectID)
 
 	require.NoError(t, err)
 	require.NotNil(t, response)
 	assert.Equal(t, &Project{
-		ID:               "11111111-1111-1111-1111-111111111111",
+		ID:               projectID,
 		Name:             "fake-org/fake-repository:catalog-info.yaml",
-		ProjectType:      ProjectType("k8sconfig"),
-		Origin:           ProjectOrigin("github-cloud-app"),
+		ProjectType:      "k8sconfig",
+		Origin:           "github-cloud-app",
 		MonitoringStatus: ProjectMonitoringStatusActive,
 		TargetPath:       "catalog-info.yaml",
 		TargetReference:  "main",
 	}, project)
 }
 
-func TestProjects_Get_validatesIDs(t *testing.T) {
-	project, response, err := client.Projects.Get(ctx, "", "project-id")
-	assert.Nil(t, project)
-	assert.Nil(t, response)
-	require.ErrorIs(t, err, ErrEmptyArgument)
-	require.EqualError(t, err, "organization ID: argument is empty")
+func TestProjects_Get_rejectsMissingOrNullData(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+	}{
+		{name: "missing data", body: `{}`},
+		{name: "null data", body: `{"data": null}`},
+	}
 
-	project, response, err = client.Projects.Get(ctx, "org-id", "")
-	assert.Nil(t, project)
-	assert.Nil(t, response)
-	require.ErrorIs(t, err, ErrEmptyArgument)
-	require.EqualError(t, err, "project ID: argument is empty")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup(t)
+			defer teardown()
+
+			mux.HandleFunc("/orgs/org-id/projects/project-id", func(w http.ResponseWriter, _ *http.Request) {
+				_, _ = fmt.Fprint(w, tt.body)
+			})
+
+			project, response, err := client.Projects.Get(ctx, "org-id", "project-id")
+
+			assert.Nil(t, project)
+			require.NotNil(t, response)
+			assert.EqualError(t, err, "convert project: response data is missing")
+		})
+	}
 }
 
-func TestProjects_Get_propagatesRESTErrorResponse(t *testing.T) {
-	setup()
+func TestProjects_Get_rejectsMalformedResourceWithContext(t *testing.T) {
+	setup(t)
 	defer teardown()
 
-	mux.HandleFunc("/orgs/org-id/projects/missing", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set(headerSnykVersionServed, "2024-05-31")
-		w.WriteHeader(http.StatusNotFound)
-		_, _ = fmt.Fprint(w, `{"errors":[{"status":"404","title":"Project not found"}]}`)
+	mux.HandleFunc("/orgs/org-id/projects/project-id", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = fmt.Fprint(w, `{
+			"data": {
+				"id": "project-id",
+				"type": "target",
+				"attributes": {}
+			}
+		}`)
 	})
 
-	project, response, err := client.Projects.Get(ctx, "org-id", "missing")
+	project, response, err := client.Projects.Get(ctx, "org-id", "project-id")
 
 	assert.Nil(t, project)
-	require.Error(t, err)
-	require.NotErrorIs(t, err, ErrEmptyArgument)
 	require.NotNil(t, response)
-	assert.Equal(t, http.StatusNotFound, response.StatusCode)
-	assert.Equal(t, "2024-05-31", response.ServedAPIVersion)
-	var errorResponse *ErrorResponse
-	require.ErrorAs(t, err, &errorResponse)
-	assert.Same(t, response, errorResponse.Response)
-	assert.Equal(t, "Project not found", errorResponse.APIErrors[0].Title)
+	assert.EqualError(t, err, `convert project: project "project-id": resource type is "target", expected "project"`)
 }
 
 func TestProjects_Delete_success(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/orgs/org-id/projects/project-id", func(w http.ResponseWriter, r *http.Request) {
@@ -583,44 +557,80 @@ func TestProjects_Delete_success(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, response.StatusCode)
 }
 
-func TestProjects_Delete_validatesIDs(t *testing.T) {
-	response, err := client.Projects.Delete(ctx, "", "project-id")
-	assert.Nil(t, response)
-	require.ErrorIs(t, err, ErrEmptyArgument)
-	require.EqualError(t, err, "organization ID: argument is empty")
+func TestProjects_Validation(t *testing.T) {
+	c := newTestClient(t)
 
-	response, err = client.Projects.Delete(ctx, "org-id", "")
-	assert.Nil(t, response)
-	require.ErrorIs(t, err, ErrEmptyArgument)
-	require.EqualError(t, err, "project ID: argument is empty")
-}
+	tests := map[string]struct {
+		call    func(t *testing.T) error
+		target  error
+		message string
+	}{
+		"List/missing organization ID": {
+			call: func(t *testing.T) error {
+				projects, response, err := c.Projects.List(ctx, "", nil)
+				assert.Nil(t, projects)
+				assert.Nil(t, response)
+				return err
+			},
+			target:  ErrEmptyArgument,
+			message: "organization ID: argument is empty",
+		},
+		"All/missing organization ID": {
+			call: func(t *testing.T) error {
+				seq, iterErr := c.Projects.All(ctx, "", nil)
+				for range seq {
+					t.Fatal("unexpected Project")
+				}
+				return iterErr()
+			},
+			target:  ErrEmptyArgument,
+			message: "organization ID: argument is empty",
+		},
+		"Get/missing organization ID": {
+			call: func(t *testing.T) error {
+				project, response, err := c.Projects.Get(ctx, "", "project-id")
+				assert.Nil(t, project)
+				assert.Nil(t, response)
+				return err
+			},
+			target:  ErrEmptyArgument,
+			message: "organization ID: argument is empty",
+		},
+		"Get/missing project ID": {
+			call: func(t *testing.T) error {
+				project, response, err := c.Projects.Get(ctx, "org-id", "")
+				assert.Nil(t, project)
+				assert.Nil(t, response)
+				return err
+			},
+			target:  ErrEmptyArgument,
+			message: "project ID: argument is empty",
+		},
+		"Delete/missing organization ID": {
+			call: func(t *testing.T) error {
+				response, err := c.Projects.Delete(ctx, "", "project-id")
+				assert.Nil(t, response)
+				return err
+			},
+			target:  ErrEmptyArgument,
+			message: "organization ID: argument is empty",
+		},
+		"Delete/missing project ID": {
+			call: func(t *testing.T) error {
+				response, err := c.Projects.Delete(ctx, "org-id", "")
+				assert.Nil(t, response)
+				return err
+			},
+			target:  ErrEmptyArgument,
+			message: "project ID: argument is empty",
+		},
+	}
 
-func TestProjects_Delete_propagatesRESTErrorResponse(t *testing.T) {
-	setup()
-	defer teardown()
-
-	mux.HandleFunc("/orgs/org-id/projects/project-id", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set(headerSnykVersionServed, "2024-05-31")
-		w.WriteHeader(http.StatusForbidden)
-		_, _ = fmt.Fprint(w, `{"errors":[{"status":"403","title":"Insufficient permissions"}]}`)
-	})
-
-	response, err := client.Projects.Delete(ctx, "org-id", "project-id")
-
-	require.Error(t, err)
-	require.NotErrorIs(t, err, ErrEmptyArgument)
-	require.NotNil(t, response)
-	assert.Equal(t, http.StatusForbidden, response.StatusCode)
-	assert.Equal(t, "2024-05-31", response.ServedAPIVersion)
-	var errorResponse *ErrorResponse
-	require.ErrorAs(t, err, &errorResponse)
-	assert.Same(t, response, errorResponse.Response)
-}
-
-func mustStartingAfter(t *testing.T, path string) string {
-	t.Helper()
-
-	cursor, err := extractStartingAfterQueryParam(path)
-	require.NoError(t, err)
-	return cursor
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := test.call(t)
+			require.ErrorIs(t, err, test.target)
+			require.EqualError(t, err, test.message)
+		})
+	}
 }

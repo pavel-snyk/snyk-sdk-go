@@ -9,7 +9,7 @@ import (
 )
 
 func TestBrokers_ListDeployments(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments", func(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +66,7 @@ func TestBrokers_ListDeployments_emptyAppInstallID(t *testing.T) {
 }
 
 func TestBrokers_ListDeploymentsForTenant(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/deployments", func(w http.ResponseWriter, r *http.Request) {
@@ -116,7 +116,7 @@ func TestBrokers_ListDeploymentsForTenant_emptyTenantID(t *testing.T) {
 }
 
 func TestBrokers_CreateDeployment(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments", func(w http.ResponseWriter, r *http.Request) {
@@ -178,7 +178,7 @@ func TestBrokers_CreateDeployment_emptyPayload(t *testing.T) {
 }
 
 func TestBrokers_UpdateDeployment(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id", func(w http.ResponseWriter, r *http.Request) {
@@ -247,7 +247,7 @@ func TestBrokers_UpdateDeployment_emptyPayload(t *testing.T) {
 }
 
 func TestBrokers_DeleteDeployment(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id", func(w http.ResponseWriter, r *http.Request) {
@@ -282,7 +282,7 @@ func TestBrokers_DeleteDeployment_emptyDeploymentID(t *testing.T) {
 }
 
 func TestBrokers_ListDeploymentCredentials(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/credentials", func(w http.ResponseWriter, r *http.Request) {
@@ -369,7 +369,7 @@ func TestBrokers_ListDeploymentCredentials_emptyDeploymentID(t *testing.T) {
 }
 
 func TestBrokers_GetDeploymentCredential(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/credentials/credential-id", func(w http.ResponseWriter, r *http.Request) {
@@ -441,7 +441,7 @@ func TestBrokers_GetDeploymentCredential_emptyCredentialID(t *testing.T) {
 }
 
 func TestBrokers_CreateDeploymentCredential(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/credentials", func(w http.ResponseWriter, r *http.Request) {
@@ -518,7 +518,7 @@ func TestBrokers_CreateDeploymentCredential_emptyPayload(t *testing.T) {
 }
 
 func TestBrokers_UpdateDeploymentCredential(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/credentials/credential-id", func(w http.ResponseWriter, r *http.Request) {
@@ -600,7 +600,7 @@ func TestBrokers_UpdateDeploymentCredential_emptyPayload(t *testing.T) {
 }
 
 func TestBrokers_DeleteDeploymentCredential(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/credentials/credential-id", func(w http.ResponseWriter, r *http.Request) {
@@ -642,7 +642,7 @@ func TestBrokers_DeleteDeploymentCredential_emptyCredentialID(t *testing.T) {
 }
 
 func TestBrokers_ListConnections(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/connections", func(w http.ResponseWriter, r *http.Request) {
@@ -717,7 +717,7 @@ func TestBrokers_ListConnections_emptyDeploymentID(t *testing.T) {
 }
 
 func TestBrokers_GetConnection(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/connections/connection-id", func(w http.ResponseWriter, r *http.Request) {
@@ -792,7 +792,7 @@ func TestBrokers_GetConnection_emptyConnectionID(t *testing.T) {
 }
 
 func TestBrokers_CreateConnection(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/connections", func(w http.ResponseWriter, r *http.Request) {
@@ -879,7 +879,7 @@ func TestBrokers_CreateConnection_emptyPayload(t *testing.T) {
 }
 
 func TestBrokers_UpdateConnection(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/connections/connection-id", func(w http.ResponseWriter, r *http.Request) {
@@ -973,7 +973,7 @@ func TestBrokers_UpdateConnection_emptyPayload(t *testing.T) {
 }
 
 func TestBrokers_DeleteConnection(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id/connections/connection-id", func(w http.ResponseWriter, r *http.Request) {
@@ -1021,7 +1021,7 @@ func TestBrokers_buildBrokerConnectionRequestPayload_emptyPayload(t *testing.T) 
 }
 
 func TestBrokers_ListIntegrations(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/connections/connection-id/integrations", func(w http.ResponseWriter, r *http.Request) {
@@ -1073,7 +1073,7 @@ func TestBrokers_ListIntegrations_emptyConnectionID(t *testing.T) {
 }
 
 func TestBrokers_CreateIntegration(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/connections/connection-id/orgs/org-id/integration", func(w http.ResponseWriter, r *http.Request) {
@@ -1137,7 +1137,7 @@ func TestBrokers_CreateIntegration_emptyPayload(t *testing.T) {
 }
 
 func TestBrokers_DeleteIntegration(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/tenants/tenant-id/brokers/connections/connection-id/orgs/org-id/integrations/integration-id", func(w http.ResponseWriter, r *http.Request) {

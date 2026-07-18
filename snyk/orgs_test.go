@@ -9,7 +9,7 @@ import (
 )
 
 func TestOrgs_ListAccessibleOrgs(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/orgs", func(w http.ResponseWriter, r *http.Request) {

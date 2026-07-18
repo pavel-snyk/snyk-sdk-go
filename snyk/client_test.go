@@ -2,12 +2,15 @@ package snyk
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -22,11 +25,22 @@ var (
 	server *httptest.Server
 )
 
-func setup() {
+func newTestClient(t testing.TB, options ...ClientOption) *Client {
+	t.Helper()
+
+	c, err := NewClient("auth-token", options...)
+	require.NoError(t, err)
+
+	return c
+}
+
+func setup(t testing.TB) {
+	t.Helper()
+
 	mux = http.NewServeMux()
 	server = httptest.NewServer(mux)
 
-	client, _ = NewClient("auth-token",
+	client = newTestClient(t,
 		WithRegion(Region{
 			Alias:       "TEST",
 			AppBaseURL:  fmt.Sprintf("%v/", server.URL),
@@ -222,6 +236,148 @@ func TestClient_restPath(t *testing.T) {
 	}
 }
 
+func TestClient_checkResponse(t *testing.T) {
+	tests := map[string]struct {
+		statusCode      int
+		body            string
+		wantAPIErrors   []APIError
+		wantErrContains string
+	}{
+		"success": {
+			statusCode: http.StatusOK,
+		},
+		"REST error": {
+			statusCode: http.StatusNotFound,
+			body:       `{"errors":[{"status":"404","title":"Project not found"}]}`,
+			wantAPIErrors: []APIError{{
+				StatusCode: "404",
+				Title:      "Project not found",
+			}},
+		},
+		"legacy error": {
+			statusCode: http.StatusBadRequest,
+			body:       `{"message":"Invalid request","errorRef":"fake-error-reference"}`,
+			wantAPIErrors: []APIError{{
+				Detail:     "Invalid request",
+				ID:         "fake-error-reference",
+				StatusCode: "400",
+				Title:      "Invalid request",
+			}},
+		},
+		"undecodable error": {
+			statusCode:      http.StatusInternalServerError,
+			body:            "not JSON",
+			wantErrContains: "failed to decode Snyk API error response; status: 500",
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			response := createTestResponse(http.MethodGet, "https://api.snyk.io/rest/projects", test.statusCode, "")
+			response.Body = io.NopCloser(strings.NewReader(test.body))
+
+			err := checkResponse(response)
+
+			if test.statusCode == http.StatusOK {
+				require.NoError(t, err)
+				return
+			}
+			if test.wantErrContains != "" {
+				assert.ErrorContains(t, err, test.wantErrContains)
+				return
+			}
+
+			var errorResponse *ErrorResponse
+			require.ErrorAs(t, err, &errorResponse)
+			assert.Same(t, response, errorResponse.Response)
+			assert.Equal(t, test.wantAPIErrors, errorResponse.APIErrors)
+		})
+	}
+}
+
+func TestClient_do_decodesSuccessResponse(t *testing.T) {
+	c := newTestClient(t, WithHTTPClient(&http.Client{Transport: roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     make(http.Header),
+			Body:       io.NopCloser(strings.NewReader(`{"name":"decoded"}`)),
+			Request:    req,
+		}, nil
+	})}))
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "https://api.snyk.io/rest/projects", nil)
+	require.NoError(t, err)
+	destination := struct {
+		Name string `json:"name"`
+	}{Name: "original"}
+
+	response, err := c.do(context.Background(), req, &destination)
+
+	require.NoError(t, err)
+	require.NotNil(t, response)
+	assert.Equal(t, http.StatusOK, response.StatusCode)
+	assert.Equal(t, "decoded", destination.Name)
+}
+
+func TestClient_do_returnsErrorResponse(t *testing.T) {
+	c := newTestClient(t, WithHTTPClient(&http.Client{Transport: roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		header := make(http.Header)
+		header.Set(headerSnykRequestID, "fake-request-id")
+		header.Set(headerSnykVersionServed, "2025-11-05")
+		return &http.Response{
+			StatusCode: http.StatusNotFound,
+			Header:     header,
+			Body:       io.NopCloser(strings.NewReader(`{"errors":[{"status":"404","title":"Project not found"}]}`)),
+			Request:    req,
+		}, nil
+	})}))
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "https://api.snyk.io/rest/projects/missing", nil)
+	require.NoError(t, err)
+	destination := struct {
+		Name string `json:"name"`
+	}{Name: "unchanged"}
+	wantDestination := destination
+
+	response, err := c.do(context.Background(), req, &destination)
+
+	require.NotNil(t, response)
+	var errorResponse *ErrorResponse
+	require.ErrorAs(t, err, &errorResponse)
+	assert.Same(t, response, errorResponse.Response)
+	assert.Equal(t, http.StatusNotFound, response.StatusCode)
+	assert.Equal(t, "fake-request-id", response.SnykRequestID)
+	assert.Equal(t, "2025-11-05", response.ServedAPIVersion)
+	assert.Equal(t, wantDestination, destination)
+}
+
+func TestClient_do_propagatesNetworkError(t *testing.T) {
+	networkErr := errors.New("network unavailable")
+	c := newTestClient(t, WithHTTPClient(&http.Client{Transport: roundTripperFunc(func(*http.Request) (*http.Response, error) {
+		return nil, networkErr
+	})}))
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "https://api.snyk.io/rest/projects", nil)
+	require.NoError(t, err)
+
+	response, err := c.do(context.Background(), req, nil)
+
+	assert.Nil(t, response)
+	require.ErrorIs(t, err, networkErr)
+}
+
+func TestClient_do_prefersCanceledContextError(t *testing.T) {
+	c := newTestClient(t, WithHTTPClient(&http.Client{Transport: roundTripperFunc(func(*http.Request) (*http.Response, error) {
+		return nil, errors.New("transport error")
+	})}))
+	canceledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+	req, err := http.NewRequestWithContext(canceledCtx, http.MethodGet, "https://api.snyk.io/rest/projects", nil)
+	require.NoError(t, err)
+
+	response, err := c.do(canceledCtx, req, nil)
+
+	assert.Nil(t, response)
+	require.ErrorIs(t, err, context.Canceled)
+}
+
 func TestClient_newResponse_populatesServedAPIVersion(t *testing.T) {
 	t.Parallel()
 
@@ -258,4 +414,10 @@ func loadFixture(t *testing.T, fixtureName string) []byte {
 	}
 
 	return data
+}
+
+type roundTripperFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
 }

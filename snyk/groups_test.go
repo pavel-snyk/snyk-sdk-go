@@ -9,7 +9,7 @@ import (
 )
 
 func TestGroups_All(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	requestCount := 0

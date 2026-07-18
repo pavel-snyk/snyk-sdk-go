@@ -44,7 +44,7 @@ import (
 //}
 
 func TestUsers_GetSelf(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/self", func(w http.ResponseWriter, r *http.Request) {
