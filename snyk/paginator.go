@@ -2,68 +2,49 @@ package snyk
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"iter"
-	"net/http"
 	"net/url"
 )
 
-// paginatedResponse is a generic "container" used to unmarshal any paginated list response
-// from Snyk REST API. It assumes the response body has a "data" field (according jsonapi),
-// containing a slice of items and a "links" field for pagination.
-type paginatedResponse[T any] struct {
-	Data  []T             `json:"data,omitempty"`
-	Links *PaginatedLinks `json:"links"`
-}
+type pageFetcher[T any] func(context.Context, ListOptions) ([]T, *Response, error)
 
-func newPaginator[T any](ctx context.Context, client *Client, baseURL *url.URL, endpointURL, version string, opts *ListOptions) (iter.Seq2[T, *Response], func() error) {
+func newPaginator[T any](ctx context.Context, initialOptions ListOptions, fetchPage pageFetcher[T]) (iter.Seq2[T, *Response], func() error) {
 	var iterErr error
-	if opts == nil {
-		opts = &ListOptions{}
-	}
 
 	seq := func(yield func(item T, resp *Response) bool) {
+		iterErr = nil
+		paginationOptions := initialOptions
+		seenCursors := make(map[string]struct{})
+		if paginationOptions.StartingAfter != "" {
+			seenCursors[paginationOptions.StartingAfter] = struct{}{}
+		}
+
 		for {
-			select {
-			// if the context has been canceled, the context's error is more useful
-			case <-ctx.Done():
-				iterErr = ctx.Err()
-				return
-			default:
-			}
-
-			path, err := restPath(endpointURL, version, opts)
-			if err != nil {
-				iterErr = fmt.Errorf("failed to construct URL with options: %w", err)
-				return
-			}
-			req, err := client.prepareRequest(ctx, http.MethodGet, baseURL, path, nil)
-			if err != nil {
-				iterErr = fmt.Errorf("failed to prepare pagination request: %w", err)
+			if err := ctx.Err(); err != nil {
+				iterErr = err
 				return
 			}
 
-			page := new(paginatedResponse[T])
-
-			resp, err := client.do(ctx, req, page)
+			items, resp, err := fetchPage(ctx, paginationOptions)
 			if err != nil {
 				iterErr = err
 				return
 			}
-			if l := page.Links; l != nil {
-				resp.Links = l
+			if resp == nil {
+				iterErr = errors.New("pagination response is missing")
+				return
 			}
 
-			for _, item := range page.Data {
+			for _, item := range items {
 				if !yield(item, resp) {
-					// stop iteration if the consumer stops
 					return
 				}
 			}
 
 			if resp.Links == nil || resp.Links.Next == "" {
-				// no more next pages, exit from pagination
-				break
+				return
 			}
 
 			startingAfter, err := extractStartingAfterQueryParam(resp.Links.Next)
@@ -71,7 +52,18 @@ func newPaginator[T any](ctx context.Context, client *Client, baseURL *url.URL, 
 				iterErr = fmt.Errorf("failed to extract starting_after query param: %w", err)
 				return
 			}
-			opts.StartingAfter = startingAfter
+			if startingAfter == "" {
+				iterErr = errors.New("next-page link has no starting_after cursor")
+				return
+			}
+			if _, seen := seenCursors[startingAfter]; seen {
+				iterErr = errors.New("next-page link repeats a previously seen starting_after cursor")
+				return
+			}
+
+			seenCursors[startingAfter] = struct{}{}
+			paginationOptions.StartingAfter = startingAfter
+			paginationOptions.EndingBefore = ""
 		}
 	}
 

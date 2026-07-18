@@ -80,6 +80,36 @@ them in a PR.
 - Expose services from `Client` as concrete pointers. Do not define SDK-owned
   service interfaces. Consumers define narrow interfaces containing only the
   SDK operations they use, including for mocking.
+- Name new operation-specific public types with the resource first so related
+  APIs group in autocomplete, for example `ProjectListOptions`,
+  `ProjectCreateRequest`, and `ProjectUpdateRequest`.
+
+### 4.1 Test Fixtures
+
+Store large or realistic response fixtures in `snyk/testdata`, normally
+using lowercase snake-case names of the form:
+
+```text
+<service>_<method>_<scenario>.json
+```
+
+For example:
+
+```text
+projects_get_success.json
+projects_get_expanded_target.json
+projects_all_page_2.json
+```
+
+Always include a scenario. Use `success` for the ordinary happy path and
+a more specific scenario when it communicates more, such as
+`expanded_target` or `not_found`.
+
+Keep small, test-specific response bodies inline when that is clearer.
+Use unmistakably synthetic fixture data, such as repeated-digit UUIDs and
+clearly fictional resource names. Never copy customer or production data.
+Load fixtures through the shared
+`loadFixture(t *testing.T, fixtureName string) []byte` test helper.
 
 ## 5. Adding a New Service (checklist)
 
@@ -114,3 +144,15 @@ from `client.X`.
 
 - Run `make test` for the full test suite and coverage report.
 - Run `make lint` before considering implementation work complete.
+
+## 7. Service File Organization
+
+Keep service files readable from top to bottom: service declarations and
+primary public types first, followed by private transport types, primary
+service methods, and related mapping and helper functions.
+
+Keep methods such as `String` close to the public model they belong to.
+
+Keep public and private types, methods, and helpers used only by a secondary
+endpoint group near that group. Treat this as a readability guideline, not a
+reason to mechanically reorder existing files or create unrelated churn.

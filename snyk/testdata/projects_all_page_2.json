@@ -1,0 +1,17 @@
+{
+  "data": [
+    {
+      "type": "project",
+      "id": "22222222-2222-2222-2222-222222222222",
+      "attributes": {
+        "name": "fake-org/fake-repository:Dockerfile",
+        "type": "dockerfile",
+        "origin": "github-cloud-app",
+        "status": "active",
+        "target_file": "Dockerfile",
+        "target_reference": "main"
+      }
+    }
+  ],
+  "links": {}
+}

@@ -8,6 +8,54 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestError_parseRESTError(t *testing.T) {
+	tests := map[string]struct {
+		data      string
+		want      []APIError
+		wantValid bool
+	}{
+		"single error": {
+			data: `{"errors":[{
+				"status":"404",
+				"title":"Project not found",
+				"detail":"The requested Project does not exist"
+			}]}`,
+			want: []APIError{{
+				StatusCode: "404",
+				Title:      "Project not found",
+				Detail:     "The requested Project does not exist",
+			}},
+			wantValid: true,
+		},
+		"multiple errors": {
+			data: `{"errors":[
+				{"status":"400","title":"Invalid request"},
+				{"status":"403","detail":"Permission denied"}
+			]}`,
+			want: []APIError{
+				{StatusCode: "400", Title: "Invalid request"},
+				{StatusCode: "403", Detail: "Permission denied"},
+			},
+			wantValid: true,
+		},
+		"malformed JSON": {
+			data: `{"errors":[`,
+		},
+		"unexpected shape": {
+			data: `{"message":"Not found"}`,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			apiErrors, valid := parseRESTError([]byte(test.data))
+
+			assert.Equal(t, test.wantValid, valid)
+			assert.Equal(t, test.want, apiErrors)
+		})
+	}
+}
+
 func TestErrorResponse_Error_withoutSnykRequestID(t *testing.T) {
 	errorResponse := &ErrorResponse{
 		Response: createTestResponse(http.MethodGet, "https://api.snyk.io/rest/somepath", 401, ""),

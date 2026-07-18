@@ -1,0 +1,54 @@
+{
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "data": [
+    {
+      "type": "project",
+      "id": "11111111-1111-1111-1111-111111111111",
+      "attributes": {
+        "name": "fake-image:/usr/local/lib/node_modules",
+        "type": "npm",
+        "origin": "cli",
+        "status": "active",
+        "target_file": "/usr/local/lib/node_modules",
+        "target_reference": "docker-image|fake-image",
+        "created": "2025-01-02T03:04:05Z",
+        "read_only": false,
+        "tags": [
+          {
+            "key": "team",
+            "value": "fake-team"
+          }
+        ],
+        "settings": {}
+      },
+      "relationships": {
+        "target": {
+          "data": {
+            "type": "target",
+            "id": "33333333-3333-3333-3333-333333333333"
+          }
+        }
+      }
+    },
+    {
+      "type": "project",
+      "id": "22222222-2222-2222-2222-222222222222",
+      "attributes": {
+        "name": "fake-org/fake-repository",
+        "type": "sast",
+        "origin": "github-cloud-app",
+        "status": "inactive",
+        "target_file": "",
+        "target_reference": "main",
+        "created": "2025-01-03T03:04:05Z",
+        "read_only": false,
+        "settings": {}
+      }
+    }
+  ],
+  "links": {
+    "next": "/rest/orgs/org-id/projects?version=server-version&starting_after=next-cursor&limit=99&origins=untrusted"
+  }
+}

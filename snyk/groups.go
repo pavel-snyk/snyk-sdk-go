@@ -88,16 +88,22 @@ func (s *GroupsService) List(ctx context.Context, opts *ListOptions) ([]Group, *
 
 // All returns an iterator to paginate over all groups you are a member of.
 //
-// This method handles the pagination logic internally for each page.
+// This method handles the pagination logic internally by calling List for each page.
+// The returned sequence may be iterated multiple times sequentially. It is not safe
+// for concurrent or overlapping iteration.
 //
 // Note: This function is experimental and its signature may change in a future release.
 //
 // See: https://docs.snyk.io/snyk-api/reference/groups#get-groups
 func (s *GroupsService) All(ctx context.Context, opts *ListOptions) (iter.Seq2[Group, *Response], func() error) {
-	if opts == nil {
-		opts = &ListOptions{}
+	initialOptions := ListOptions{}
+	if opts != nil {
+		initialOptions = *opts
 	}
-	return newPaginator[Group](ctx, s.client, s.client.restBaseURL, groupsBasePath, groupsAPIVersion, opts)
+
+	return newPaginator(ctx, initialOptions, func(ctx context.Context, pageOptions ListOptions) ([]Group, *Response, error) {
+		return s.List(ctx, &pageOptions)
+	})
 }
 
 // Get provides the full details of a group.

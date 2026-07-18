@@ -8,7 +8,7 @@ import (
 )
 
 func TestApps_DeleteAppInstallFromOrg(t *testing.T) {
-	setup()
+	setup(t)
 	defer teardown()
 
 	mux.HandleFunc("/orgs/org-id/apps/installs/install-id", func(w http.ResponseWriter, r *http.Request) {
