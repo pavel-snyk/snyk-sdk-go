@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"iter"
 	"net/http"
 )
 
@@ -57,7 +58,7 @@ func (d BrokerDeployment) String() string { return Stringify(d) }
 // See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-installs-install_id-deployments
 func (s *BrokersService) ListDeployments(ctx context.Context, tenantID, appInstallID string) ([]BrokerDeployment, *Response, error) {
 	if tenantID == "" {
-		return nil, nil, errors.New("failed to list broker deployments: tenant id must be supplied")
+		return nil, nil, fmt.Errorf("tenant ID: %w", ErrEmptyArgument)
 	}
 	if appInstallID == "" {
 		return nil, nil, errors.New("failed to list broker deployments: app install id must be supplied")
@@ -89,11 +90,45 @@ func (s *BrokersService) ListDeployments(ctx context.Context, tenantID, appInsta
 //
 // See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-deployments
 func (s *BrokersService) ListDeploymentsForTenant(ctx context.Context, tenantID string) ([]BrokerDeployment, *Response, error) {
+	return s.listDeploymentsForTenant(ctx, tenantID, nil)
+}
+
+// AllDeploymentsForTenant returns an iterator over all broker deployments for the tenant.
+//
+// Pagination starts from opts.StartingAfter when supplied, so the iterator returns all remaining
+// broker deployments after that cursor rather than restarting from the first page. The returned
+// sequence may be iterated multiple times sequentially. It is not safe for concurrent or
+// overlapping iteration.
+//
+// This method is experimental and its signature may change in a future release.
+//
+// See: https://docs.snyk.io/snyk-api/reference/universal-broker#get-tenants-tenant_id-brokers-deployments
+func (s *BrokersService) AllDeploymentsForTenant(ctx context.Context, tenantID string, opts *ListOptions) (iter.Seq2[BrokerDeployment, *Response], func() error) {
 	if tenantID == "" {
-		return nil, nil, errors.New("failed to list broker deployments: tenant id must be supplied")
+		validationErr := fmt.Errorf("tenant ID: %w", ErrEmptyArgument)
+		return func(func(BrokerDeployment, *Response) bool) {}, func() error { return validationErr }
 	}
 
-	path, err := restPath(fmt.Sprintf("%v/%v/brokers/deployments", tenantsBasePath, tenantID), brokersAPIVersion, nil)
+	initialOptions := ListOptions{}
+	if opts != nil {
+		initialOptions = *opts
+	}
+	if initialOptions.EndingBefore != "" {
+		validationErr := errors.New("ending-before pagination is not supported when iterating all broker deployments")
+		return func(func(BrokerDeployment, *Response) bool) {}, func() error { return validationErr }
+	}
+
+	return newPaginator(ctx, initialOptions, func(ctx context.Context, pageOptions ListOptions) ([]BrokerDeployment, *Response, error) {
+		return s.listDeploymentsForTenant(ctx, tenantID, &pageOptions)
+	})
+}
+
+func (s *BrokersService) listDeploymentsForTenant(ctx context.Context, tenantID string, opts *ListOptions) ([]BrokerDeployment, *Response, error) {
+	if tenantID == "" {
+		return nil, nil, fmt.Errorf("tenant ID: %w", ErrEmptyArgument)
+	}
+
+	path, err := restPath(fmt.Sprintf("%v/%v/brokers/deployments", tenantsBasePath, tenantID), brokersAPIVersion, opts)
 	if err != nil {
 		return nil, nil, err
 	}

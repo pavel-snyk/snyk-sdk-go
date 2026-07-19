@@ -1,12 +1,17 @@
 package snyk
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+var _ func(*BrokersService, context.Context, string) ([]BrokerDeployment, *Response, error) = (*BrokersService).ListDeploymentsForTenant
 
 func TestBrokers_ListDeployments(t *testing.T) {
 	setup(t)
@@ -54,8 +59,8 @@ func TestBrokers_ListDeployments(t *testing.T) {
 func TestBrokers_ListDeployments_emptyTenantID(t *testing.T) {
 	_, _, err := client.Brokers.ListDeployments(ctx, "", "install-id")
 
-	assert.Error(t, err)
-	assert.ErrorContains(t, err, "tenant id must be supplied")
+	require.ErrorIs(t, err, ErrEmptyArgument)
+	assert.EqualError(t, err, "tenant ID: argument is empty")
 }
 
 func TestBrokers_ListDeployments_emptyAppInstallID(t *testing.T) {
@@ -111,8 +116,213 @@ func TestBrokers_ListDeploymentsForTenant(t *testing.T) {
 func TestBrokers_ListDeploymentsForTenant_emptyTenantID(t *testing.T) {
 	_, _, err := client.Brokers.ListDeploymentsForTenant(ctx, "")
 
-	assert.Error(t, err)
-	assert.ErrorContains(t, err, "tenant id must be supplied")
+	require.ErrorIs(t, err, ErrEmptyArgument)
+	assert.EqualError(t, err, "tenant ID: argument is empty")
+}
+
+func TestBrokers_AllDeploymentsForTenant_multiplePages(t *testing.T) {
+	setup(t)
+	defer teardown()
+
+	options := &ListOptions{StartingAfter: "initial-cursor", Limit: 2}
+	requestCount := 0
+	mux.HandleFunc("/tenants/tenant-id/brokers/deployments", func(w http.ResponseWriter, r *http.Request) {
+		requestCount++
+		assert.Equal(t, http.MethodGet, r.Method)
+		assertRequestAPIVersion(t, r, brokersAPIVersion)
+
+		switch requestCount {
+		case 1:
+			assert.Equal(t, url.Values{
+				"limit":          {"2"},
+				"starting_after": {"initial-cursor"},
+				"version":        {brokersAPIVersion},
+			}, r.URL.Query())
+			w.Header().Set(headerSnykRequestID, "page-1-request")
+			_, _ = fmt.Fprint(w, `{
+				"data": [
+					{"id":"11111111-1111-1111-1111-111111111111","type":"broker_deployment"},
+					{"id":"22222222-2222-2222-2222-222222222222","type":"broker_deployment"}
+				],
+				"links": {"next":"/rest/tenants/tenant-id/brokers/deployments?limit=2&starting_after=next-cursor"}
+			}`)
+		case 2:
+			assert.Equal(t, url.Values{
+				"limit":          {"2"},
+				"starting_after": {"next-cursor"},
+				"version":        {brokersAPIVersion},
+			}, r.URL.Query())
+			w.Header().Set(headerSnykRequestID, "page-2-request")
+			_, _ = fmt.Fprint(w, `{
+				"data": [
+					{"id":"33333333-3333-3333-3333-333333333333","type":"broker_deployment"}
+				],
+				"links": {}
+			}`)
+		default:
+			http.Error(w, "unexpected pagination request", http.StatusInternalServerError)
+		}
+	})
+
+	seq, iterErr := client.Brokers.AllDeploymentsForTenant(ctx, "tenant-id", options)
+	var deployments []BrokerDeployment
+	var responses []*Response
+	for deployment, response := range seq {
+		deployments = append(deployments, deployment)
+		responses = append(responses, response)
+	}
+
+	require.NoError(t, iterErr())
+	require.Len(t, deployments, 3)
+	assert.Equal(t, []string{
+		"11111111-1111-1111-1111-111111111111",
+		"22222222-2222-2222-2222-222222222222",
+		"33333333-3333-3333-3333-333333333333",
+	}, []string{deployments[0].ID, deployments[1].ID, deployments[2].ID})
+	require.Len(t, responses, 3)
+	assert.Same(t, responses[0], responses[1])
+	assert.NotSame(t, responses[0], responses[2])
+	assert.Equal(t, []string{"page-1-request", "page-1-request", "page-2-request"}, []string{
+		responses[0].SnykRequestID,
+		responses[1].SnykRequestID,
+		responses[2].SnykRequestID,
+	})
+	assert.Equal(t, 2, requestCount)
+	assert.Equal(t, &ListOptions{StartingAfter: "initial-cursor", Limit: 2}, options)
+}
+
+func TestBrokers_AllDeploymentsForTenant_preservesEarlierPagesOnLaterFailure(t *testing.T) {
+	setup(t)
+	defer teardown()
+
+	requestCount := 0
+	mux.HandleFunc("/tenants/tenant-id/brokers/deployments", func(w http.ResponseWriter, r *http.Request) {
+		requestCount++
+		if requestCount == 1 {
+			_, _ = fmt.Fprint(w, `{
+				"data": [{"id":"11111111-1111-1111-1111-111111111111","type":"broker_deployment"}],
+				"links": {"next":"/rest/tenants/tenant-id/brokers/deployments?starting_after=next-cursor"}
+			}`)
+			return
+		}
+
+		assert.Equal(t, "next-cursor", r.URL.Query().Get("starting_after"))
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = fmt.Fprint(w, `{"errors":[{"status":"500","title":"synthetic later-page failure"}]}`)
+	})
+
+	seq, iterErr := client.Brokers.AllDeploymentsForTenant(ctx, "tenant-id", nil)
+	var deploymentIDs []string
+	for deployment := range seq {
+		deploymentIDs = append(deploymentIDs, deployment.ID)
+	}
+
+	assert.Equal(t, []string{"11111111-1111-1111-1111-111111111111"}, deploymentIDs)
+	require.Equal(t, 2, requestCount)
+	var responseErr *ErrorResponse
+	require.ErrorAs(t, iterErr(), &responseErr)
+	assert.Equal(t, http.StatusInternalServerError, responseErr.Response.StatusCode)
+	assert.ErrorContains(t, iterErr(), "synthetic later-page failure")
+}
+
+func TestBrokers_AllDeploymentsForTenant_snapshotsOptionsAtConstruction(t *testing.T) {
+	setup(t)
+	defer teardown()
+
+	options := &ListOptions{StartingAfter: "original-cursor", Limit: 20}
+	seq, iterErr := client.Brokers.AllDeploymentsForTenant(ctx, "tenant-id", options)
+
+	options.StartingAfter = "changed-cursor"
+	options.EndingBefore = "changed-ending-cursor"
+	options.Limit = 99
+
+	mux.HandleFunc("/tenants/tenant-id/brokers/deployments", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, url.Values{
+			"limit":          {"20"},
+			"starting_after": {"original-cursor"},
+			"version":        {brokersAPIVersion},
+		}, r.URL.Query())
+		_, _ = fmt.Fprint(w, `{"data":[],"links":{}}`)
+	})
+
+	for range seq {
+		t.Fatal("unexpected broker deployment")
+	}
+
+	require.NoError(t, iterErr())
+}
+
+func TestBrokers_AllDeploymentsForTenant_restartsSequentialIterationFromInitialCursor(t *testing.T) {
+	setup(t)
+	defer teardown()
+
+	requestCount := 0
+	mux.HandleFunc("/tenants/tenant-id/brokers/deployments", func(w http.ResponseWriter, r *http.Request) {
+		requestCount++
+		switch requestCount {
+		case 1, 3:
+			assert.Equal(t, "initial-cursor", r.URL.Query().Get("starting_after"))
+			_, _ = fmt.Fprint(w, `{
+				"data": [{"id":"11111111-1111-1111-1111-111111111111","type":"broker_deployment"}],
+				"links": {"next":"/rest/tenants/tenant-id/brokers/deployments?starting_after=next-cursor"}
+			}`)
+		case 2, 4:
+			assert.Equal(t, "next-cursor", r.URL.Query().Get("starting_after"))
+			_, _ = fmt.Fprint(w, `{
+				"data": [{"id":"22222222-2222-2222-2222-222222222222","type":"broker_deployment"}],
+				"links": {}
+			}`)
+		default:
+			http.Error(w, "unexpected pagination request", http.StatusInternalServerError)
+		}
+	})
+
+	seq, iterErr := client.Brokers.AllDeploymentsForTenant(ctx, "tenant-id", &ListOptions{StartingAfter: "initial-cursor"})
+
+	var firstIteration []string
+	for deployment := range seq {
+		firstIteration = append(firstIteration, deployment.ID)
+	}
+	require.NoError(t, iterErr())
+
+	var secondIteration []string
+	for deployment := range seq {
+		secondIteration = append(secondIteration, deployment.ID)
+	}
+	require.NoError(t, iterErr())
+
+	wantDeploymentIDs := []string{
+		"11111111-1111-1111-1111-111111111111",
+		"22222222-2222-2222-2222-222222222222",
+	}
+	assert.Equal(t, wantDeploymentIDs, firstIteration)
+	assert.Equal(t, wantDeploymentIDs, secondIteration)
+	assert.Equal(t, 4, requestCount)
+}
+
+func TestBrokers_AllDeploymentsForTenant_rejectsEndingBefore(t *testing.T) {
+	setup(t)
+	defer teardown()
+
+	seq, iterErr := client.Brokers.AllDeploymentsForTenant(ctx, "tenant-id", &ListOptions{
+		EndingBefore: "previous-cursor",
+	})
+	for range seq {
+		t.Fatal("unexpected broker deployment")
+	}
+
+	assert.EqualError(t, iterErr(), "ending-before pagination is not supported when iterating all broker deployments")
+}
+
+func TestBrokers_AllDeploymentsForTenant_emptyTenantID(t *testing.T) {
+	c := newTestClient(t)
+	seq, iterErr := c.Brokers.AllDeploymentsForTenant(ctx, "", nil)
+	for range seq {
+		t.Fatal("unexpected broker deployment")
+	}
+
+	require.ErrorIs(t, iterErr(), ErrEmptyArgument)
+	assert.EqualError(t, iterErr(), "tenant ID: argument is empty")
 }
 
 func TestBrokers_CreateDeployment(t *testing.T) {
