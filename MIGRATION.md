@@ -60,3 +60,71 @@ converted atomically, so a malformed page yields none of its Projects while
 Projects from previously completed pages remain yielded. The returned sequence
 may be iterated multiple times sequentially, but concurrent or overlapping
 iteration is not supported.
+
+## Group is an SDK read model
+
+`Group` is now a flat, SDK-owned read model rather than a public mirror of the
+REST JSON:API resource:
+
+```go
+type Group struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+```
+
+Code that previously read a name through `group.Attributes.Name` must now use
+`group.Name`. The public `Type`, `Attributes`, and `Relationships` fields have
+been removed, along with the exported `GroupAttributes` and
+`GroupRelationships` transport types. The Get-only slug, timestamps, and tenant
+relationship are intentionally not part of this minimal read model.
+
+The JSON representation of `Group` has consequently changed from the REST
+JSON:API resource shape to the flat `id` and `name` fields shown above. `List`,
+`All`, and `Get` still return `Group` values, but those values now use this
+SDK-owned representation.
+
+`Group.String()` now reflects the flattened `Group` representation, so its
+diagnostic output has changed accordingly.
+
+## Group list options and iteration
+
+`ListGroupsOptions` has been replaced by the resource-first
+`GroupListOptions`. The Groups List endpoint currently supports only the shared
+pagination options, so the new type embeds `ListOptions` and does not add
+speculative filters.
+
+`GroupsService.List` and `GroupsService.All` now accept `*GroupListOptions`
+instead of `*ListOptions`:
+
+```go
+groups, response, err := client.Groups.List(ctx, &snyk.GroupListOptions{
+	ListOptions: snyk.ListOptions{Limit: 20},
+})
+
+groups, iterErr := client.Groups.All(ctx, &snyk.GroupListOptions{
+	ListOptions: snyk.ListOptions{StartingAfter: cursor, Limit: 20},
+})
+```
+
+`All` snapshots its options when it is constructed and rebuilds every request
+from that snapshot plus the cursor returned by the preceding page. It does not
+adopt the endpoint, version, limit, or other query values from a server link.
+Repeated sequential iteration starts from the original cursor. Concurrent or
+overlapping iteration remains unsupported.
+
+Group iteration is now explicitly forward-only: an ending-before cursor is
+rejected. Each page is converted atomically, so a malformed page yields none of
+its Groups while Groups from earlier pages remain yielded.
+
+## Group response validation
+
+Groups List and Get now reject malformed JSON:API resources with an empty ID,
+an unexpected resource type, or missing attributes. Missing or null response
+`data` is also an error; `data: []` remains a valid empty List result. These
+post-decode errors preserve the HTTP `*Response` returned alongside them.
+
+`GroupsService.Get` now reports a missing Group ID as
+`group ID: argument is empty`, and the error matches `snyk.ErrEmptyArgument`.
+This replaces the previous ad-hoc `failed to get org: id must be supplied`
+message.
