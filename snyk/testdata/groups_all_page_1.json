@@ -1,0 +1,15 @@
+{
+  "jsonapi": { "version": "1.0" },
+  "data": [
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "type": "group",
+      "attributes": {
+        "name": "Fictional Platform Group"
+      }
+    }
+  ],
+  "links": {
+    "next": "/groups?version=server-selected-value&limit=999&starting_after=next-cursor"
+  }
+}

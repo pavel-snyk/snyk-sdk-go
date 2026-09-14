@@ -6,64 +6,57 @@ import (
 	"fmt"
 	"iter"
 	"net/http"
-	"time"
 )
 
 const (
 	groupsBasePath   = "groups"
-	groupsAPIVersion = "2025-11-05"
+	groupsAPIVersion = "2026-03-25"
 )
 
-// GroupsService handles communication with the group related methods of the Snyk API.
+// GroupsService handles communication with the Groups REST API.
 type GroupsService service
 
-// Group represents a Snyk group.
+// Group represents a Snyk Group.
 //
-// See: https://docs.snyk.io/snyk-platform-administration/groups-and-organizations/groups
+// Its JSON representation is SDK-owned and distinct from the Snyk REST
+// JSON:API representation. Group is a read model and is not a REST request
+// payload.
 type Group struct {
-	ID            string              `json:"id"`                      // The Group identifier.
-	Type          string              `json:"type"`                    // The resource type `group`.
-	Attributes    *GroupAttributes    `json:"attributes,omitempty"`    // The Group resource data.
-	Relationships *GroupRelationships `json:"relationships,omitempty"` // The relationships object describing relationships between Group and Tenant.
+	ID   string `json:"id"`   // The Group identifier.
+	Name string `json:"name"` // The Group display name.
 }
 
-type GroupAttributes struct {
-	CreatedAt time.Time `json:"created_at,omitempty"` // The time the Group was created.
-	Name      string    `json:"name"`                 // The display name of the Group.
-	Slug      string    `json:"slug,omitempty"`       // The canonical (unique and URL-friendly) name of the Group.
-	UpdatedAt time.Time `json:"updated_at,omitempty"` // The time the Group was last modified.
-}
+// String returns a string representation of the Group.
+func (g Group) String() string { return Stringify(g) }
 
-type GroupRelationships struct {
-	Tenant *tenantRoot `json:"tenant,omitempty"`
-}
-
-type ListGroupsOptions struct {
+// GroupListOptions specifies pagination for List.
+type GroupListOptions struct {
 	ListOptions
 }
 
+type groupAttributes struct {
+	Name string `json:"name"`
+}
+
+type groupResource struct {
+	ID         string           `json:"id"`
+	Type       string           `json:"type"`
+	Attributes *groupAttributes `json:"attributes"`
+}
+
 type groupRoot struct {
-	Group *Group `json:"data,omitempty"`
+	Group *groupResource `json:"data"`
 }
 
 type groupsRoot struct {
-	Groups []Group         `json:"data"`
+	Groups []groupResource `json:"data"`
 	Links  *PaginatedLinks `json:"links,omitempty"`
 }
 
-func (g Group) String() string { return Stringify(g) }
-
-// List gets a paginated list of all groups you are a member of.
-//
-// Note: Group attributes will contain only name. If you want to access full details
-// of a group, use Get method.
+// List provides one page of Groups accessible to the authenticated user.
 //
 // See: https://docs.snyk.io/snyk-api/reference/groups#get-groups
-func (s *GroupsService) List(ctx context.Context, opts *ListOptions) ([]Group, *Response, error) {
-	if opts == nil {
-		opts = &ListOptions{}
-	}
-
+func (s *GroupsService) List(ctx context.Context, opts *GroupListOptions) ([]Group, *Response, error) {
 	path, err := restPath(groupsBasePath, groupsAPIVersion, opts)
 	if err != nil {
 		return nil, nil, err
@@ -75,46 +68,61 @@ func (s *GroupsService) List(ctx context.Context, opts *ListOptions) ([]Group, *
 	}
 
 	root := new(groupsRoot)
-	resp, err := s.client.do(ctx, req, &root)
+	resp, err := s.client.do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
 	}
-	if l := root.Links; l != nil {
-		resp.Links = l
+	if root.Links != nil {
+		resp.Links = root.Links
+	}
+	if root.Groups == nil {
+		return nil, resp, errors.New("convert groups: response data is missing")
 	}
 
-	return root.Groups, resp, nil
+	groups, err := groupsFromResources(root.Groups)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return groups, resp, nil
 }
 
-// All returns an iterator to paginate over all groups you are a member of.
+// All returns an iterator over Groups accessible to the authenticated user.
 //
-// This method handles the pagination logic internally by calling List for each page.
+// Pagination starts from opts.StartingAfter when supplied, so the iterator returns all
+// remaining Groups after that cursor rather than restarting from the first page.
+// Each page is converted atomically: if a page is malformed, none of its Groups are
+// yielded, while Groups from earlier pages remain yielded.
+//
 // The returned sequence may be iterated multiple times sequentially. It is not safe
 // for concurrent or overlapping iteration.
 //
-// Note: This function is experimental and its signature may change in a future release.
+// This method is experimental and its signature may change in a future release.
 //
 // See: https://docs.snyk.io/snyk-api/reference/groups#get-groups
-func (s *GroupsService) All(ctx context.Context, opts *ListOptions) (iter.Seq2[Group, *Response], func() error) {
-	initialOptions := ListOptions{}
-	if opts != nil {
-		initialOptions = *opts
+func (s *GroupsService) All(ctx context.Context, opts *GroupListOptions) (iter.Seq2[Group, *Response], func() error) {
+	baseOptions := cloneGroupListOptions(opts)
+	if baseOptions.EndingBefore != "" {
+		validationErr := errors.New("ending-before pagination is not supported when iterating all groups")
+		return func(func(Group, *Response) bool) {}, func() error { return validationErr }
 	}
 
-	return newPaginator(ctx, initialOptions, func(ctx context.Context, pageOptions ListOptions) ([]Group, *Response, error) {
-		return s.List(ctx, &pageOptions)
+	return newPaginator(ctx, baseOptions.ListOptions, func(ctx context.Context, pageOptions ListOptions) ([]Group, *Response, error) {
+		currentOptions := baseOptions
+		currentOptions.ListOptions = pageOptions
+		return s.List(ctx, &currentOptions)
 	})
 }
 
-// Get provides the full details of a group.
+// Get provides one Group by Group ID.
 //
 // See: https://docs.snyk.io/snyk-api/reference/group#get-groups-group_id
 func (s *GroupsService) Get(ctx context.Context, groupID string) (*Group, *Response, error) {
 	if groupID == "" {
-		return nil, nil, errors.New("failed to get org: id must be supplied")
+		return nil, nil, fmt.Errorf("group ID: %w", ErrEmptyArgument)
 	}
 
-	path, err := restPath(fmt.Sprintf("%v/%v", groupsBasePath, groupID), groupsAPIVersion, nil)
+	path, err := restPath(fmt.Sprintf("%s/%s", groupsBasePath, groupID), groupsAPIVersion, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -125,10 +133,56 @@ func (s *GroupsService) Get(ctx context.Context, groupID string) (*Group, *Respo
 	}
 
 	root := new(groupRoot)
-	resp, err := s.client.do(ctx, req, &root)
+	resp, err := s.client.do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
 	}
+	if root.Group == nil {
+		return nil, resp, errors.New("convert group: response data is missing")
+	}
 
-	return root.Group, resp, nil
+	group, err := groupFromResource(*root.Group)
+	if err != nil {
+		return nil, resp, fmt.Errorf("convert group: %w", err)
+	}
+
+	return &group, resp, nil
+}
+
+func groupFromResource(resource groupResource) (Group, error) {
+	if resource.ID == "" {
+		return Group{}, errors.New("resource ID is empty")
+	}
+	if resource.Type != "group" {
+		return Group{}, fmt.Errorf("group %q: resource type is %q, expected %q", resource.ID, resource.Type, "group")
+	}
+	if resource.Attributes == nil {
+		return Group{}, fmt.Errorf("group %q: attributes are missing", resource.ID)
+	}
+
+	return Group{
+		ID:   resource.ID,
+		Name: resource.Attributes.Name,
+	}, nil
+}
+
+func groupsFromResources(resources []groupResource) ([]Group, error) {
+	groups := make([]Group, 0, len(resources))
+	for i, resource := range resources {
+		group, err := groupFromResource(resource)
+		if err != nil {
+			return nil, fmt.Errorf("convert group at index %d: %w", i, err)
+		}
+		groups = append(groups, group)
+	}
+
+	return groups, nil
+}
+
+func cloneGroupListOptions(opts *GroupListOptions) GroupListOptions {
+	if opts == nil {
+		return GroupListOptions{}
+	}
+
+	return *opts
 }

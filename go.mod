@@ -1,6 +1,6 @@
 module github.com/pavel-snyk/snyk-sdk-go/v2
 
-go 1.25
+go 1.27
 
 require (
 	github.com/google/go-querystring v1.2.0
