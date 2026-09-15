@@ -38,7 +38,9 @@ type BrokerDeploymentAttributes struct {
 }
 
 type BrokerDeploymentCreateOrUpdateRequest struct {
-	OrgID    string // The ID of the organization containing the Universal Broker Snyk AppInstall.
+	OrgID string // The ID of the organization containing the Universal Broker Snyk AppInstall.
+	// Metadata controls deployment metadata. On create, nil and empty maps both create an empty metadata object.
+	// On update, nil leaves metadata unchanged, an empty non-nil map clears it, and a populated map replaces it.
 	Metadata map[string]string
 }
 
@@ -174,18 +176,18 @@ func (s *BrokersService) CreateDeployment(ctx context.Context, tenantID, appInst
 	var createRequestJSON struct {
 		Data struct {
 			Attributes struct {
-				OrgID    string       `json:"broker_app_installed_in_org_id"`
-				Metadata *KeyValueMap `json:"metadata,omitempty"`
+				OrgID    string            `json:"broker_app_installed_in_org_id"`
+				Metadata map[string]string `json:"metadata"`
 			} `json:"attributes"`
 			Type string `json:"type"`
 		} `json:"data"`
 	}
 	createRequestJSON.Data.Attributes.OrgID = createRequest.OrgID
-	metadata := KeyValueMap{}
-	if createRequest.Metadata != nil {
-		metadata = createRequest.Metadata
+	metadata := createRequest.Metadata
+	if metadata == nil {
+		metadata = map[string]string{}
 	}
-	createRequestJSON.Data.Attributes.Metadata = &metadata
+	createRequestJSON.Data.Attributes.Metadata = metadata
 	createRequestJSON.Data.Type = "broker_deployment"
 
 	req, err := s.client.prepareRequest(ctx, http.MethodPost, s.client.restBaseURL, path, createRequestJSON)
@@ -228,20 +230,19 @@ func (s *BrokersService) UpdateDeployment(ctx context.Context, tenantID, appInst
 	var updateRequestJSON struct {
 		Data struct {
 			Attributes struct {
-				InstallID string       `json:"install_id"`
-				OrgID     string       `json:"broker_app_installed_in_org_id"`
-				Metadata  *KeyValueMap `json:"metadata,omitempty"`
+				InstallID string             `json:"install_id"`
+				OrgID     string             `json:"broker_app_installed_in_org_id"`
+				Metadata  *map[string]string `json:"metadata,omitempty"`
 			} `json:"attributes"`
 			Type string `json:"type"`
 		} `json:"data"`
 	}
 	updateRequestJSON.Data.Attributes.InstallID = appInstallID
 	updateRequestJSON.Data.Attributes.OrgID = updateRequest.OrgID
-	metadata := KeyValueMap{}
 	if updateRequest.Metadata != nil {
-		metadata = updateRequest.Metadata
+		metadata := updateRequest.Metadata
+		updateRequestJSON.Data.Attributes.Metadata = &metadata
 	}
-	updateRequestJSON.Data.Attributes.Metadata = &metadata
 	updateRequestJSON.Data.Type = "broker_deployment"
 
 	req, err := s.client.prepareRequest(ctx, http.MethodPatch, s.client.restBaseURL, path, updateRequestJSON)
