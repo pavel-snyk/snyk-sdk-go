@@ -2,7 +2,9 @@ package snyk
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"maps"
 	"net/http"
 	"net/url"
 	"testing"
@@ -366,6 +368,62 @@ func TestBrokers_CreateDeployment(t *testing.T) {
 	assert.Equal(t, expectedDeployment, actualDeployment)
 }
 
+func TestBrokers_CreateDeployment_metadataRequestBody(t *testing.T) {
+	tests := []struct {
+		name     string
+		metadata map[string]string
+		expected map[string]string
+	}{
+		{
+			name:     "nil metadata",
+			expected: map[string]string{},
+		},
+		{
+			name:     "empty metadata",
+			metadata: map[string]string{},
+			expected: map[string]string{},
+		},
+		{
+			name:     "populated metadata",
+			metadata: map[string]string{"environment": "production"},
+			expected: map[string]string{"environment": "production"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			setup(t)
+			defer teardown()
+
+			mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments", func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, http.MethodPost, r.Method)
+				assertRequestAPIVersion(t, r, brokersAPIVersion)
+
+				metadataJSON, present := decodeBrokerDeploymentRequestMetadata(t, r)
+				require.True(t, present)
+				assert.NotEqual(t, "null", string(metadataJSON))
+
+				var metadata map[string]string
+				require.NoError(t, json.Unmarshal(metadataJSON, &metadata))
+				assert.Equal(t, test.expected, metadata)
+
+				w.WriteHeader(http.StatusNoContent)
+			})
+
+			request := &BrokerDeploymentCreateOrUpdateRequest{
+				OrgID:    "org-id",
+				Metadata: test.metadata,
+			}
+			metadataBefore := maps.Clone(request.Metadata)
+
+			_, _, err := client.Brokers.CreateDeployment(ctx, "tenant-id", "install-id", request)
+
+			require.NoError(t, err)
+			assert.Equal(t, metadataBefore, request.Metadata)
+		})
+	}
+}
+
 func TestBrokers_CreateDeployment_emptyTenantID(t *testing.T) {
 	_, _, err := client.Brokers.CreateDeployment(ctx, "", "install-id", &BrokerDeploymentCreateOrUpdateRequest{})
 
@@ -426,6 +484,80 @@ func TestBrokers_UpdateDeployment(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedDeployment, actualDeployment)
+}
+
+func TestBrokers_UpdateDeployment_metadataRequestBody(t *testing.T) {
+	tests := []struct {
+		name            string
+		metadata        map[string]string
+		expected        map[string]string
+		expectedPresent bool
+	}{
+		{
+			name: "nil metadata",
+		},
+		{
+			name:            "empty metadata",
+			metadata:        map[string]string{},
+			expected:        map[string]string{},
+			expectedPresent: true,
+		},
+		{
+			name:            "populated metadata",
+			metadata:        map[string]string{"environment": "production"},
+			expected:        map[string]string{"environment": "production"},
+			expectedPresent: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			setup(t)
+			defer teardown()
+
+			mux.HandleFunc("/tenants/tenant-id/brokers/installs/install-id/deployments/deployment-id", func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, http.MethodPatch, r.Method)
+				assertRequestAPIVersion(t, r, brokersAPIVersion)
+
+				metadataJSON, present := decodeBrokerDeploymentRequestMetadata(t, r)
+				assert.Equal(t, test.expectedPresent, present)
+				if present {
+					assert.NotEqual(t, "null", string(metadataJSON))
+
+					var metadata map[string]string
+					require.NoError(t, json.Unmarshal(metadataJSON, &metadata))
+					assert.Equal(t, test.expected, metadata)
+				}
+
+				w.WriteHeader(http.StatusNoContent)
+			})
+
+			request := &BrokerDeploymentCreateOrUpdateRequest{
+				OrgID:    "org-id",
+				Metadata: test.metadata,
+			}
+			metadataBefore := maps.Clone(request.Metadata)
+
+			_, _, err := client.Brokers.UpdateDeployment(ctx, "tenant-id", "install-id", "deployment-id", request)
+
+			require.NoError(t, err)
+			assert.Equal(t, metadataBefore, request.Metadata)
+		})
+	}
+}
+
+func decodeBrokerDeploymentRequestMetadata(t *testing.T, r *http.Request) (json.RawMessage, bool) {
+	t.Helper()
+
+	var payload struct {
+		Data struct {
+			Attributes map[string]json.RawMessage `json:"attributes"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.NewDecoder(r.Body).Decode(&payload))
+
+	metadata, present := payload.Data.Attributes["metadata"]
+	return metadata, present
 }
 
 func TestBrokers_UpdateDeployment_emptyTenantID(t *testing.T) {

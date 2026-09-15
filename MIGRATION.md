@@ -128,3 +128,22 @@ post-decode errors preserve the HTTP `*Response` returned alongside them.
 `group ID: argument is empty`, and the error matches `snyk.ErrEmptyArgument`.
 This replaces the previous ad-hoc `failed to get org: id must be supplied`
 message.
+
+## Broker deployment metadata updates
+
+`BrokersService.UpdateDeployment` now treats a nil `Metadata` map as an omitted
+field, preserving the deployment's existing metadata. Previously, nil was sent
+as an empty object and cleared existing metadata. To clear metadata explicitly,
+pass a non-nil empty map:
+
+```go
+request.Metadata = map[string]string{}
+```
+
+Create behavior is unchanged: nil and empty metadata maps are both sent as an
+empty object. A populated map is sent as the replacement metadata for both
+create and update requests.
+
+The exported `KeyValueMap` helper has been removed. It had no remaining SDK use
+after field-presence handling moved to the containing Broker request payloads.
+Code that referred to it directly should use `map[string]string` instead.
